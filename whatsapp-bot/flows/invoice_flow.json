@@ -1,0 +1,485 @@
+{
+  "version": "7.0",
+  "screens": [
+
+    {
+      "id": "COMPANY_INFO",
+      "title": "Company Details",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Your Company Details"
+          },
+          {
+            "type": "TextBody",
+            "text": "This information will appear at the top of the invoice."
+          },
+          {
+            "type": "PhotoPicker",
+            "label": "Company Logo",
+            "name": "company_logo",
+            "description": "Upload your company logo (PNG or JPG)",
+            "photo-source": "camera_gallery",
+            "max-file-size-kb": 5120
+          },
+          {
+            "type": "TextInput",
+            "label": "Company Name",
+            "name": "company_name",
+            "required": true,
+            "input-type": "text"
+          },
+          {
+            "type": "TextInput",
+            "label": "Company Email",
+            "name": "company_email",
+            "required": true,
+            "input-type": "email"
+          },
+          {
+            "type": "TextInput",
+            "label": "Company Phone",
+            "name": "company_phone",
+            "required": true,
+            "input-type": "phone"
+          },
+          {
+            "type": "TextInput",
+            "label": "Company Website",
+            "name": "company_website",
+            "required": false,
+            "input-type": "text",
+            "helper-text": "Optional"
+          },
+          {
+            "type": "Footer",
+            "label": "Next",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "CUSTOMER_INFO"
+              },
+              "payload": {}
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "CUSTOMER_INFO",
+      "title": "Customer Details",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Bill To"
+          },
+          {
+            "type": "TextBody",
+            "text": "Enter the details of the customer being invoiced."
+          },
+          {
+            "type": "TextInput",
+            "label": "Customer Name",
+            "name": "customer_name",
+            "required": true,
+            "input-type": "text"
+          },
+          {
+            "type": "TextInput",
+            "label": "Customer Email",
+            "name": "customer_email",
+            "required": true,
+            "input-type": "email"
+          },
+          {
+            "type": "TextInput",
+            "label": "Customer Phone",
+            "name": "customer_phone",
+            "required": true,
+            "input-type": "phone"
+          },
+          {
+            "type": "TextInput",
+            "label": "Customer Company",
+            "name": "customer_company",
+            "required": false,
+            "input-type": "text",
+            "helper-text": "Optional"
+          },
+          {
+            "type": "TextInput",
+            "label": "Street Address",
+            "name": "customer_address",
+            "required": true,
+            "input-type": "text"
+          },
+          {
+            "type": "TextInput",
+            "label": "City",
+            "name": "customer_city",
+            "required": true,
+            "input-type": "text"
+          },
+          {
+            "type": "TextInput",
+            "label": "Country",
+            "name": "customer_country",
+            "required": true,
+            "input-type": "text"
+          },
+          {
+            "type": "Footer",
+            "label": "Next",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "LINE_ITEMS"
+              },
+              "payload": {}
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "LINE_ITEMS",
+      "title": "Products / Services",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Invoice Line Items"
+          },
+          {
+            "type": "TextBody",
+            "text": "Add up to 5 products or services. Only Item 1 is required."
+          },
+
+          {
+            "type": "TextSubheading",
+            "text": "Item 1 *"
+          },
+          {
+            "type": "TextInput",
+            "label": "Description",
+            "name": "item1_description",
+            "required": true,
+            "input-type": "text"
+          },
+          {
+            "type": "TextInput",
+            "label": "Quantity",
+            "name": "item1_quantity",
+            "required": true,
+            "input-type": "number"
+          },
+          {
+            "type": "TextInput",
+            "label": "Unit Price",
+            "name": "item1_unit_price",
+            "required": true,
+            "input-type": "number",
+            "helper-text": "e.g. 100.00"
+          },
+
+          {
+            "type": "TextSubheading",
+            "text": "Item 2"
+          },
+          {
+            "type": "TextInput",
+            "label": "Description",
+            "name": "item2_description",
+            "required": false,
+            "input-type": "text"
+          },
+          {
+            "type": "TextInput",
+            "label": "Quantity",
+            "name": "item2_quantity",
+            "required": false,
+            "input-type": "number"
+          },
+          {
+            "type": "TextInput",
+            "label": "Unit Price",
+            "name": "item2_unit_price",
+            "required": false,
+            "input-type": "number"
+          },
+
+          {
+            "type": "TextSubheading",
+            "text": "Item 3"
+          },
+          {
+            "type": "TextInput",
+            "label": "Description",
+            "name": "item3_description",
+            "required": false,
+            "input-type": "text"
+          },
+          {
+            "type": "TextInput",
+            "label": "Quantity",
+            "name": "item3_quantity",
+            "required": false,
+            "input-type": "number"
+          },
+          {
+            "type": "TextInput",
+            "label": "Unit Price",
+            "name": "item3_unit_price",
+            "required": false,
+            "input-type": "number"
+          },
+
+          {
+            "type": "TextSubheading",
+            "text": "Item 4"
+          },
+          {
+            "type": "TextInput",
+            "label": "Description",
+            "name": "item4_description",
+            "required": false,
+            "input-type": "text"
+          },
+          {
+            "type": "TextInput",
+            "label": "Quantity",
+            "name": "item4_quantity",
+            "required": false,
+            "input-type": "number"
+          },
+          {
+            "type": "TextInput",
+            "label": "Unit Price",
+            "name": "item4_unit_price",
+            "required": false,
+            "input-type": "number"
+          },
+
+          {
+            "type": "TextSubheading",
+            "text": "Item 5"
+          },
+          {
+            "type": "TextInput",
+            "label": "Description",
+            "name": "item5_description",
+            "required": false,
+            "input-type": "text"
+          },
+          {
+            "type": "TextInput",
+            "label": "Quantity",
+            "name": "item5_quantity",
+            "required": false,
+            "input-type": "number"
+          },
+          {
+            "type": "TextInput",
+            "label": "Unit Price",
+            "name": "item5_unit_price",
+            "required": false,
+            "input-type": "number"
+          },
+
+          {
+            "type": "Footer",
+            "label": "Next",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "BILLING_INFO"
+              },
+              "payload": {}
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "BILLING_INFO",
+      "title": "Billing Information",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Billing & Tax Details"
+          },
+          {
+            "type": "TextInput",
+            "label": "Invoice Number",
+            "name": "invoice_number",
+            "required": true,
+            "input-type": "text",
+            "helper-text": "e.g. INV-001"
+          },
+          {
+            "type": "DatePicker",
+            "label": "Invoice Date",
+            "name": "invoice_date",
+            "required": true
+          },
+          {
+            "type": "DatePicker",
+            "label": "Due Date",
+            "name": "due_date",
+            "required": true
+          },
+          {
+            "type": "Dropdown",
+            "label": "Currency",
+            "name": "currency",
+            "required": true,
+            "data-source": [
+              { "id": "USD", "title": "USD - US Dollar" },
+              { "id": "ZWL", "title": "ZWL - Zimbabwe Dollar" },
+              { "id": "ZAR", "title": "ZAR - South African Rand" },
+              { "id": "GBP", "title": "GBP - British Pound" },
+              { "id": "EUR", "title": "EUR - Euro" }
+            ]
+          },
+          {
+            "type": "TextInput",
+            "label": "Tax / VAT Number",
+            "name": "tax_number",
+            "required": false,
+            "input-type": "text",
+            "helper-text": "Optional"
+          },
+          {
+            "type": "TextInput",
+            "label": "Tax Rate (%)",
+            "name": "tax_rate",
+            "required": false,
+            "input-type": "number",
+            "helper-text": "Enter 0 if no tax applies"
+          },
+          {
+            "type": "Footer",
+            "label": "Next",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "NOTES"
+              },
+              "payload": {}
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "NOTES",
+      "title": "Additional Details",
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Notes & Payment Terms"
+          },
+          {
+            "type": "TextInput",
+            "label": "Purchase Order (PO) Number",
+            "name": "po_number",
+            "required": false,
+            "input-type": "text",
+            "helper-text": "Optional"
+          },
+          {
+            "type": "Dropdown",
+            "label": "Payment Terms",
+            "name": "payment_terms",
+            "required": true,
+            "data-source": [
+              { "id": "due_on_receipt", "title": "Due on Receipt" },
+              { "id": "net_7",          "title": "Net 7 Days" },
+              { "id": "net_15",         "title": "Net 15 Days" },
+              { "id": "net_30",         "title": "Net 30 Days" },
+              { "id": "net_60",         "title": "Net 60 Days" }
+            ]
+          },
+          {
+            "type": "TextInput",
+            "label": "Bank / Payment Details",
+            "name": "payment_details",
+            "required": false,
+            "input-type": "text",
+            "helper-text": "e.g. Bank name, account number, branch code"
+          },
+          {
+            "type": "TextArea",
+            "label": "Special Instructions / Notes",
+            "name": "notes",
+            "required": false,
+            "helper-text": "Any additional notes to appear on the invoice"
+          },
+          {
+            "type": "Footer",
+            "label": "Review & Submit",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "SUCCESS"
+              },
+              "payload": {}
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "SUCCESS",
+      "title": "Invoice Submitted",
+      "terminal": true,
+      "data": {},
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Submitted Successfully!"
+          },
+          {
+            "type": "TextBody",
+            "text": "Your invoice details have been received. We are now generating your invoice.\n\nYou will receive your invoice PDF and all related files shortly in this chat. Please keep this conversation open."
+          },
+          {
+            "type": "Footer",
+            "label": "Done",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {}
+            }
+          }
+        ]
+      }
+    }
+
+  ]
+}
