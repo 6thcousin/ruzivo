@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>$(hotspot-name) - Login</title>
+
+  <!-- ============================================================
+       MYZIVO HOTSPOT LOGIN TEMPLATE
+       ============================================================
+       HOW TO CUSTOMIZE FOR EACH CLIENT:
+         1. Replace logo URL / img src below
+         2. Change --brand-color and --brand-accent CSS variables
+         3. Update the venue name & tagline text
+         4. Upload this file to MikroTik:
+            Files > Upload > hotspot/login.html
+       ============================================================ -->
+
+  <style>
+    /* ── BRAND COLORS ─────────────────────────────────────────── */
+    :root {
+      --brand-color:  #1a73e8;   /* primary / buttons              */
+      --brand-accent: #0d47a1;   /* hover state                    */
+      --bg-color:     #f0f4f8;   /* page background                */
+      --card-bg:      #ffffff;   /* login card background          */
+      --text-main:    #1e293b;   /* main text                      */
+      --text-muted:   #64748b;   /* secondary / placeholder text   */
+      --error-color:  #dc2626;   /* error messages                 */
+      --radius:       12px;      /* border radius                  */
+    }
+
+    /* ── RESET ────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-color);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    /* ── CARD ─────────────────────────────────────────────────── */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 24px rgba(0,0,0,.10);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    /* ── LOGO ─────────────────────────────────────────────────── */
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .logo-wrap img {
+      /* ── REPLACE src WITH CLIENT LOGO URL ── */
+      max-height: 80px;
+      max-width: 200px;
+      object-fit: contain;
+    }
+
+    /* ── VENUE NAME & TAGLINE ─────────────────────────────────── */
+    .venue-name {
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: .25rem;
+    }
+
+    .tagline {
+      text-align: center;
+      font-size: .875rem;
+      color: var(--text-muted);
+      margin-bottom: 1.75rem;
+    }
+
+    /* ── FORM ELEMENTS ────────────────────────────────────────── */
+    label {
+      display: block;
+      font-size: .8125rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: .35rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: .75rem 1rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: var(--text-main);
+      background: #f8fafc;
+      outline: none;
+      transition: border-color .2s;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--brand-color);
+      background: #fff;
+    }
+
+    /* ── LOGIN BUTTON ─────────────────────────────────────────── */
+    .btn-login {
+      display: block;
+      width: 100%;
+      padding: .85rem;
+      background: var(--brand-color);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+      margin-top: .5rem;
+    }
+
+    .btn-login:hover  { background: var(--brand-accent); }
+    .btn-login:active { opacity: .9; }
+
+    /* ── ERROR MESSAGE ────────────────────────────────────────── */
+    .error-msg {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: var(--error-color);
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      font-size: .875rem;
+      margin-bottom: 1rem;
+      display: none;   /* shown dynamically when $(error) exists */
+    }
+
+    .error-msg.visible { display: block; }
+
+    /* ── FOOTER ───────────────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: .75rem;
+      color: var(--text-muted);
+    }
+
+    .footer a {
+      color: var(--brand-color);
+      text-decoration: none;
+    }
+
+    /* ── POWERED BY MYZIVO ────────────────────────────────────── */
+    .powered-by {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: .7rem;
+      color: #94a3b8;
+      letter-spacing: .03em;
+    }
+
+    .powered-by span { font-weight: 700; color: var(--brand-color); }
+
+    /* ── RESPONSIVE ───────────────────────────────────────────── */
+    @media (max-width: 440px) {
+      .card { padding: 2rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+
+    <!-- LOGO — replace src with client logo URL or relative path -->
+    <div class="logo-wrap">
+      <img src="$(link-login-only)logo.png" alt="Venue Logo" />
+    </div>
+
+    <!-- VENUE NAME — change per client -->
+    <p class="venue-name">Venue Name Here</p>
+    <p class="tagline">Connect to free Wi-Fi — enter your details below</p>
+
+    <!-- ERROR — MikroTik injects $(error) automatically -->
+    <div class="error-msg$(if error) visible$(endif error)">
+      $(error)
+    </div>
+
+    <!-- LOGIN FORM
+         MikroTik requires:
+           action  = $(link-login-only)
+           method  = post
+           name    = "username" and "password" fields        -->
+    <form action="$(link-login-only)" method="post">
+
+      <!-- Hidden fields required by MikroTik -->
+      <input type="hidden" name="dst"            value="$(link-orig)" />
+      <input type="hidden" name="popup"          value="true" />
+
+      <!-- Username -->
+      <label for="username">Username</label>
+      <input
+        id="username"
+        type="text"
+        name="username"
+        value="$(username)"
+        placeholder="Enter your username"
+        autocomplete="username"
+        required
+      />
+
+      <!-- Password -->
+      <label for="password">Password</label>
+      <input
+        id="password"
+        type="password"
+        name="password"
+        placeholder="Enter your password"
+        autocomplete="current-password"
+        required
+      />
+
+      <button type="submit" class="btn-login">Connect</button>
+    </form>
+
+    <!-- OPTIONAL FOOTER LINKS — edit or remove as needed -->
+    <p class="footer">
+      Need help? <a href="tel:+2630000000000">Call support</a>
+    </p>
+
+  </div>
+
+  <!-- POWERED BY MYZIVO — keep this for branding -->
+  <p class="powered-by">Powered by <span>Myzivo</span></p>
+
+</body>
+</html>
