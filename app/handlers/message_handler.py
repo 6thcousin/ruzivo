@@ -10,6 +10,15 @@ from app.handlers.quote_handler import (
     S_QUOTE_PRODUCTS, S_QUOTE_CONFIRM,
     S_QUOTE_NAME, S_QUOTE_ADDRESS, S_QUOTE_PHONE,
 )
+from app.handlers.hotspot_handler import (
+    start_hotspot_setup,
+    handle_hotspot_name, handle_hotspot_logo,
+    handle_hotspot_wifi, handle_hotspot_voucher,
+    handle_hotspot_payment_button, handle_hotspot_payment_text,
+    handle_hotspot_confirm,
+    S_HOTSPOT_NAME, S_HOTSPOT_LOGO, S_HOTSPOT_WIFI,
+    S_HOTSPOT_VOUCHER, S_HOTSPOT_PAYMENT, S_HOTSPOT_CONFIRM,
+)
 
 # ── Main menu ─────────────────────────────────────────────────────────────────
 
@@ -69,7 +78,30 @@ async def handle_message(message: WhatsAppMessage) -> None:
 
     text = message.text.body.strip()
 
-    # State-based text collection
+    # State-based text collection — hotspot setup
+    if state == S_HOTSPOT_NAME:
+        await handle_hotspot_name(sender, session, text)
+        return
+
+    if state == S_HOTSPOT_LOGO:
+        await handle_hotspot_logo(sender, session, text)
+        return
+
+    if state == S_HOTSPOT_WIFI:
+        await handle_hotspot_wifi(sender, session, text)
+        return
+
+    if state == S_HOTSPOT_VOUCHER:
+        await handle_hotspot_voucher(sender, session, text)
+        return
+
+    if state == S_HOTSPOT_PAYMENT:
+        # user typed "none" or "skip" instead of tapping a button
+        if text.strip().lower() in ("none", "skip"):
+            await handle_hotspot_payment_text(sender, session, text)
+        return
+
+    # State-based text collection — quote flow
     if state == S_QUOTE_NAME:
         await handle_name(sender, session, text)
         return
@@ -101,10 +133,20 @@ async def _handle_button(sender: str, session: dict, state: str, btn_id: str) ->
         return
 
     if btn_id == "btn_mikrotik":
-        await send_text_message(
-            sender,
-            "🔧 *Mikrotik* section coming soon!\n\nSend *hi* to go back to the menu."
-        )
+        await start_hotspot_setup(sender, session)
+        return
+
+    # ── Hotspot setup buttons ─────────────────────────────────────────────────
+    if btn_id in ("hs_pay_both", "hs_pay_ecocash", "hs_pay_cash"):
+        await handle_hotspot_payment_button(sender, session, btn_id)
+        return
+
+    if btn_id == "hs_confirm":
+        await handle_hotspot_confirm(sender, session)
+        return
+
+    if btn_id == "hs_start_over":
+        await start_hotspot_setup(sender, session)
         return
 
     if btn_id == "btn_livechat":

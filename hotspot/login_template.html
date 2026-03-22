@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ wifi_name }} - Login</title>
+
+  <style>
+    :root {
+      --brand:   #1a73e8;
+      --accent:  #0d47a1;
+      --radius:  12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── PAGE — ZivoPay watermark locked to background ─────────── */
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background-color: #f0f4f8;
+
+      /* ZivoPay watermark — always present, never removed */
+      background-image: url('zivopay_watermark.png');
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: 340px auto;
+      background-attachment: fixed;
+    }
+
+    /* ── CARD ───────────────────────────────────────────────────── */
+    .card {
+      background: rgba(255,255,255,0.93);
+      backdrop-filter: blur(4px);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 28px rgba(0,0,0,.12);
+      padding: 2.25rem 2rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    /* ── CLIENT LOGO ────────────────────────────────────────────── */
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .logo-wrap img {
+      max-height: 80px;
+      max-width: 200px;
+      object-fit: contain;
+    }
+
+    /* ── COMPANY NAME & WIFI NAME ───────────────────────────────── */
+    .company-name {
+      text-align: center;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: .2rem;
+    }
+
+    .wifi-name {
+      text-align: center;
+      font-size: .85rem;
+      color: #64748b;
+      margin-bottom: 1.5rem;
+    }
+
+    .wifi-name span {
+      font-weight: 600;
+      color: var(--brand);
+    }
+
+    /* ── ERROR ──────────────────────────────────────────────────── */
+    .error-msg {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      border-radius: 8px;
+      padding: .7rem 1rem;
+      font-size: .875rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .error-msg.visible { display: block; }
+
+    /* ── FORM ───────────────────────────────────────────────────── */
+    label {
+      display: block;
+      font-size: .78rem;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: .3rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: .72rem 1rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #1e293b;
+      background: #f8fafc;
+      outline: none;
+      transition: border-color .2s;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--brand);
+      background: #fff;
+    }
+
+    .btn-login {
+      display: block;
+      width: 100%;
+      padding: .82rem;
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .btn-login:hover  { background: var(--accent); }
+    .btn-login:active { opacity: .9; }
+
+    /* ── VOUCHER INFO ───────────────────────────────────────────── */
+    .voucher-info {
+      margin-top: 1.25rem;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      font-size: .82rem;
+      color: #0369a1;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .voucher-info strong { display: block; margin-bottom: .2rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: #0c4a6e; }
+
+    /* ── PAYMENT METHODS (optional) ─────────────────────────────── */
+    .payment-section {
+      margin-top: 1rem;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 1rem;
+    }
+
+    .payment-label {
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #94a3b8;
+      text-align: center;
+      margin-bottom: .6rem;
+    }
+
+    .payment-methods {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .payment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .35rem .75rem;
+      border-radius: 20px;
+      font-size: .8rem;
+      font-weight: 600;
+      border: 1.5px solid;
+    }
+
+    .badge-ecocash {
+      background: #fff7ed;
+      border-color: #fb923c;
+      color: #c2410c;
+    }
+
+    .badge-cash {
+      background: #f0fdf4;
+      border-color: #4ade80;
+      color: #166534;
+    }
+
+    /* ── POWERED BY ZIVOPAY ─────────────────────────────────────── */
+    .powered-by {
+      text-align: center;
+      margin-top: 1.75rem;
+      font-size: .68rem;
+      color: #94a3b8;
+      letter-spacing: .04em;
+    }
+
+    .powered-by strong { color: var(--brand); }
+
+    @media (max-width: 440px) {
+      .card { padding: 1.75rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+
+    <!-- CLIENT LOGO -->
+    {% if company_logo_url %}
+    <div class="logo-wrap">
+      <img src="{{ company_logo_url }}" alt="{{ company_name }} logo" />
+    </div>
+    {% endif %}
+
+    <!-- COMPANY & WIFI NAME -->
+    <p class="company-name">{{ company_name }}</p>
+    <p class="wifi-name">WiFi: <span>{{ wifi_name }}</span></p>
+
+    <!-- MIKROTIK ERROR — injected automatically by RouterOS -->
+    <div class="error-msg$(if error) visible$(endif error)">$(error)</div>
+
+    <!-- LOGIN FORM — MikroTik variables must stay exactly as-is -->
+    <form action="$(link-login-only)" method="post">
+      <input type="hidden" name="dst"   value="$(link-orig)" />
+      <input type="hidden" name="popup" value="true" />
+
+      <label for="username">Username</label>
+      <input
+        id="username"
+        type="text"
+        name="username"
+        value="$(username)"
+        placeholder="Enter your username"
+        autocomplete="username"
+        required
+      />
+
+      <label for="password">Password</label>
+      <input
+        id="password"
+        type="password"
+        name="password"
+        placeholder="Enter your password"
+        autocomplete="current-password"
+        required
+      />
+
+      <button type="submit" class="btn-login">Connect to Wi-Fi</button>
+    </form>
+
+    <!-- WHERE TO BUY VOUCHER -->
+    {% if voucher_location %}
+    <div class="voucher-info">
+      <strong>Where to buy a voucher</strong>
+      {{ voucher_location }}
+    </div>
+    {% endif %}
+
+    <!-- PAYMENT METHODS — optional, collected from WhatsApp bot -->
+    {% if payment_modes %}
+    <div class="payment-section">
+      <p class="payment-label">We accept</p>
+      <div class="payment-methods">
+        {% if 'ecocash' in payment_modes %}
+        <span class="payment-badge badge-ecocash">&#128247; EcoCash</span>
+        {% endif %}
+        {% if 'cash' in payment_modes %}
+        <span class="payment-badge badge-cash">&#128181; Cash</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ZIVOPAY BRANDING — always present -->
+  <p class="powered-by">Powered by <strong>ZivoPay</strong> &mdash; Myzivo Hotspot</p>
+
+</body>
+</html>
