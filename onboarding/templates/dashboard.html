@@ -1,0 +1,165 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard — ZivoPay Onboarding{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('onboard') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Onboard Client
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="opacity-75 small mb-1">Total Clients</div>
+          <div class="fs-2 fw-bold">{{ clients|length }}</div>
+        </div>
+        <i class="bi bi-people-fill fs-2 opacity-50"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="opacity-75 small mb-1">Total Routers</div>
+          <div class="fs-2 fw-bold">{{ routers|length }}</div>
+        </div>
+        <i class="bi bi-router-fill fs-2 opacity-50"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#10b981,#065f46)">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="opacity-75 small mb-1">WireGuard</div>
+          <div class="fs-2 fw-bold">{{ routers|selectattr('connection_type','eq','wireguard')|list|length }}</div>
+        </div>
+        <i class="bi bi-shield-lock-fill fs-2 opacity-50"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#f59e0b,#b45309)">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="opacity-75 small mb-1">Local Direct</div>
+          <div class="fs-2 fw-bold">{{ routers|selectattr('connection_type','eq','local')|list|length }}</div>
+        </div>
+        <i class="bi bi-hdd-network-fill fs-2 opacity-50"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Recent Clients -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people me-2 text-primary"></i>Recent Clients</span>
+        <a href="{{ url_for('clients') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        {% if clients %}
+        <div class="list-group list-group-flush rounded-bottom-3">
+          {% for c in clients[-8:]|reverse %}
+          <a href="{{ url_for('client_detail', client_id=c.id) }}"
+             class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 px-4">
+            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
+                 style="width:38px;height:38px;font-weight:700;font-size:.9rem;flex-shrink:0">
+              {{ c.name[0].upper() }}
+            </div>
+            <div class="flex-grow-1 min-width-0">
+              <div class="fw-semibold text-truncate">{{ c.name }}</div>
+              <div class="text-muted small text-truncate">{{ c.business_name or c.location or '—' }}</div>
+            </div>
+            <div class="text-end flex-shrink-0">
+              <span class="badge bg-secondary-subtle text-secondary">{{ c.routers|length }} router{{ 's' if c.routers|length != 1 }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-people fs-2 d-block mb-2"></i>
+          No clients yet. <a href="{{ url_for('onboard') }}">Onboard your first one!</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Routers -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-router me-2 text-purple"></i>Recent Routers</span>
+        <a href="{{ url_for('routers_all') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        {% if routers %}
+        <div class="list-group list-group-flush rounded-bottom-3">
+          {% for r in routers[:8] %}
+          <a href="{{ url_for('router_detail', router_id=r.id) }}"
+             class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 px-4">
+            <span class="dot dot-gray" id="dot-{{ r.id }}"></span>
+            <div class="flex-grow-1 min-width-0">
+              <div class="fw-semibold text-truncate">{{ r.name }}</div>
+              <div class="text-muted small">{{ r.host }} · {{ r.client.name }}</div>
+            </div>
+            <span class="badge badge-{{ 'wg' if r.connection_type == 'wireguard' else 'local' }} small">
+              {{ 'WG' if r.connection_type == 'wireguard' else 'Local' }}
+            </span>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-router fs-2 d-block mb-2"></i>
+          No routers yet.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity log -->
+  {% if recent_logs %}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-clock-history me-2 text-secondary"></i>Recent Command Activity</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Router</th><th>Command</th><th>Status</th><th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in recent_logs %}
+              <tr>
+                <td><a href="{{ url_for('router_detail', router_id=log.router_id) }}">{{ log.router.name }}</a></td>
+                <td class="font-monospace small">{{ log.command[:60] }}{% if log.command|length > 60 %}…{% endif %}</td>
+                <td>
+                  <span class="badge {{ 'bg-success' if log.status == 'success' else 'bg-danger' }} bg-opacity-75">
+                    {{ log.status }}
+                  </span>
+                </td>
+                <td class="text-muted small">{{ log.executed_at.strftime('%b %d %H:%M') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

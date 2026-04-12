@@ -1,0 +1,295 @@
+{% extends "layout.html" %}
+{% block title %}Onboard New Client{% endblock %}
+{% block page_title %}Onboard New Client{% endblock %}
+
+{% block content %}
+
+<!-- Progress indicator -->
+<div class="d-flex align-items-center gap-3 mb-4">
+  {% for i, label in [(1,'Client Info'), (2,'Router Setup'), (3,'Confirm & Save')] %}
+  <div class="d-flex align-items-center gap-2">
+    <span class="wizard-step {{ 'done' if step > i else ('active' if step == i else 'pending') }}">
+      {% if step > i %}<i class="bi bi-check"></i>{% else %}{{ i }}{% endif %}
+    </span>
+    <span class="small fw-semibold {{ 'text-muted' if step < i else '' }}">{{ label }}</span>
+  </div>
+  {% if i < 3 %}
+  <div class="flex-grow-1 border-top border-2 {{ 'border-primary' if step > i else 'border-light-subtle' }}" style="max-width:80px"></div>
+  {% endif %}
+  {% endfor %}
+</div>
+
+<div class="row justify-content-center">
+<div class="col-lg-8">
+
+<!-- ── STEP 1: Client Info ─────────────────────────────────────────────── -->
+{% if step == 1 %}
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-person-circle me-2 text-primary"></i>Step 1 — Client Information
+  </div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('onboard') }}">
+      <input type="hidden" name="step" value="1">
+      <input type="hidden" name="data" value="{{ data | tojson | e }}">
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+          <input class="form-control" name="name" required
+                 value="{{ data.client.name if data.client else '' }}"
+                 placeholder="Contact person name">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label fw-semibold">Business / School Name</label>
+          <input class="form-control" name="business_name"
+                 value="{{ data.client.business_name if data.client else '' }}"
+                 placeholder="e.g. S & J Enterprises">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label fw-semibold">Phone</label>
+          <input class="form-control" name="phone" type="tel"
+                 value="{{ data.client.phone if data.client else '' }}">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label fw-semibold">Email</label>
+          <input class="form-control" name="email" type="email"
+                 value="{{ data.client.email if data.client else '' }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-semibold">Location</label>
+          <input class="form-control" name="location"
+                 value="{{ data.client.location if data.client else '' }}"
+                 placeholder="e.g. Harare, Zimbabwe">
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-semibold">Notes</label>
+          <textarea class="form-control" name="notes" rows="2"
+                    placeholder="Any extra info…">{{ data.client.notes if data.client else '' }}</textarea>
+        </div>
+      </div>
+      <hr class="my-3">
+      <div class="text-end">
+        <button type="submit" class="btn btn-primary px-4">
+          Next <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── STEP 2: Router Setup ───────────────────────────────────────────── -->
+{% if step == 2 %}
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-router me-2 text-primary"></i>Step 2 — Router Setup
+    <span class="text-muted small ms-2">for {{ data.client.name }}</span>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('onboard') }}" id="step2-form">
+      <input type="hidden" name="step" value="2">
+      <input type="hidden" name="data" value="{{ data | tojson | e }}">
+      <div class="row g-3">
+        <div class="col-sm-7">
+          <label class="form-label fw-semibold">Router Name <span class="text-danger">*</span></label>
+          <input class="form-control" name="router_name" required
+                 value="{{ data.router.name if data.router else '' }}"
+                 placeholder="e.g. siganda_secondary">
+        </div>
+        <div class="col-sm-5">
+          <label class="form-label fw-semibold">Connection Type</label>
+          <select class="form-select" name="connection_type" id="conn-select" onchange="toggleWg()">
+            <option value="wireguard" {{ 'selected' if not data.router or data.router.connection_type=='wireguard' }}>WireGuard (VPN)</option>
+            <option value="local" {{ 'selected' if data.router and data.router.connection_type=='local' }}>Local / Direct LAN</option>
+          </select>
+        </div>
+
+        <div class="col-sm-5">
+          <label class="form-label fw-semibold">Router IP / Host <span class="text-danger">*</span></label>
+          <input class="form-control font-monospace" name="host" required
+                 value="{{ data.router.host if data.router else '' }}"
+                 placeholder="10.0.0.7 or 192.168.88.1">
+        </div>
+        <div class="col-sm-3">
+          <label class="form-label fw-semibold">API Port</label>
+          <input class="form-control" name="port" type="number"
+                 value="{{ data.router.port if data.router else 8728 }}">
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label fw-semibold">WiFi SSID</label>
+          <input class="form-control" name="ssid"
+                 value="{{ data.router.ssid if data.router else '' }}"
+                 placeholder="Hotspot SSID">
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label fw-semibold">Username</label>
+          <input class="form-control" name="username"
+                 value="{{ data.router.username if data.router else 'admin' }}">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label fw-semibold">Password</label>
+          <input class="form-control" name="password" type="password"
+                 value="{{ data.router.password if data.router else '' }}"
+                 placeholder="MikroTik admin password" autocomplete="off">
+        </div>
+
+        <!-- WireGuard fields -->
+        <div id="wg-section">
+          <div class="alert alert-info py-2 px-3 mb-2 small">
+            <i class="bi bi-shield-lock me-1"></i>
+            WireGuard: enter the router's tunnel IP (10.0.0.x) assigned on the VPS.
+          </div>
+          <div class="row g-3">
+            <div class="col-sm-5">
+              <label class="form-label fw-semibold">WireGuard Tunnel IP</label>
+              <input class="form-control font-monospace" name="wg_ip"
+                     value="{{ data.router.wg_ip if data.router else '' }}"
+                     placeholder="10.0.0.x">
+            </div>
+            <div class="col-sm-7">
+              <label class="form-label fw-semibold">WireGuard Public Key <span class="text-muted">(optional)</span></label>
+              <input class="form-control font-monospace small" name="wg_public_key"
+                     value="{{ data.router.wg_public_key if data.router else '' }}"
+                     placeholder="Base64 public key">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Inline test -->
+      <div class="mt-3 d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="testInline()">
+          <i class="bi bi-plug me-1"></i>Test Connection First
+        </button>
+        <span id="inline-test" class="small"></span>
+      </div>
+
+      <hr class="my-3">
+      <div class="d-flex justify-content-between">
+        <a href="{{ url_for('onboard') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+        <button type="submit" class="btn btn-primary px-4">
+          Next <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── STEP 3: Confirm ────────────────────────────────────────────────── -->
+{% if step == 3 %}
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-check2-circle me-2 text-success"></i>Step 3 — Confirm & Save
+  </div>
+  <div class="card-body">
+
+    {% if test_result and test_result.success %}
+    <div class="alert alert-success d-flex align-items-center gap-2 py-2">
+      <i class="bi bi-check-circle-fill fs-5"></i>
+      <span>Connected to <b>{{ test_result.identity }}</b>
+        — {{ test_result.board }}, RouterOS {{ test_result.version }}
+        — uptime {{ test_result.uptime }}</span>
+    </div>
+    {% elif test_result %}
+    <div class="alert alert-warning d-flex align-items-center gap-2 py-2">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>Connection test failed: {{ test_result.error }}. You can still save and retry later.</span>
+    </div>
+    {% endif %}
+
+    <div class="row g-3">
+      <div class="col-sm-6">
+        <div class="card border bg-light">
+          <div class="card-header py-2 bg-transparent border-0 fw-semibold small text-muted">
+            <i class="bi bi-person me-1"></i>CLIENT
+          </div>
+          <div class="card-body pt-0 small">
+            <div class="fw-bold fs-6">{{ data.client.name }}</div>
+            {% if data.client.business_name %}<div>{{ data.client.business_name }}</div>{% endif %}
+            {% if data.client.phone %}<div class="text-muted">{{ data.client.phone }}</div>{% endif %}
+            {% if data.client.email %}<div class="text-muted">{{ data.client.email }}</div>{% endif %}
+            {% if data.client.location %}<div class="text-muted">{{ data.client.location }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="card border bg-light">
+          <div class="card-header py-2 bg-transparent border-0 fw-semibold small text-muted">
+            <i class="bi bi-router me-1"></i>ROUTER
+          </div>
+          <div class="card-body pt-0 small">
+            <div class="fw-bold fs-6">{{ data.router.name }}</div>
+            <div class="font-monospace">{{ data.router.host }}:{{ data.router.port }}</div>
+            <div class="text-muted">User: {{ data.router.username }}</div>
+            <div>
+              <span class="badge badge-{{ 'wg' if data.router.connection_type=='wireguard' else 'local' }}">
+                {{ 'WireGuard' if data.router.connection_type=='wireguard' else 'Local' }}
+              </span>
+              {% if data.router.wg_ip %}
+              <span class="badge bg-light text-secondary border ms-1 font-monospace">{{ data.router.wg_ip }}</span>
+              {% endif %}
+            </div>
+            {% if data.router.ssid %}<div class="mt-1"><i class="bi bi-wifi me-1"></i>{{ data.router.ssid }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <form method="post" action="{{ url_for('onboard') }}" class="mt-3">
+      <input type="hidden" name="step" value="3">
+      <input type="hidden" name="data" value="{{ data | tojson | e }}">
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary"
+                onclick="history.back()">
+          <i class="bi bi-arrow-left me-1"></i>Back
+        </button>
+        <button type="submit" class="btn btn-success px-4">
+          <i class="bi bi-check-lg me-1"></i>Save & Open Router
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+</div><!-- col -->
+</div><!-- row -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleWg() {
+  const t = document.getElementById('conn-select').value;
+  document.getElementById('wg-section').style.display = t === 'wireguard' ? '' : 'none';
+}
+{% if step == 2 %}toggleWg();{% endif %}
+
+function testInline() {
+  const host = document.querySelector('[name=host]').value.trim();
+  const port = document.querySelector('[name=port]').value;
+  const user = document.querySelector('[name=username]').value.trim();
+  const pass = document.querySelector('[name=password]').value;
+  if (!host) { alert('Enter a host/IP first.'); return; }
+
+  const el = document.getElementById('inline-test');
+  el.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Testing…</span>';
+
+  const fd = new FormData();
+  fd.append('host', host); fd.append('port', port);
+  fd.append('username', user); fd.append('password', pass);
+
+  fetch('/api/test-adhoc', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      el.innerHTML = d.success
+        ? `<span class="text-success"><i class="bi bi-check-circle me-1"></i><b>${d.identity}</b> (${d.board})</span>`
+        : `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${d.error}</span>`;
+    }).catch(e => { el.innerHTML = `<span class="text-danger">${e}</span>`; });
+}
+</script>
+{% endblock %}

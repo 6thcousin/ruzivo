@@ -26,3 +26,5 @@ env/
 # Logs
 *.log
 logs/
+onboarding/data/
+onboarding/venv/

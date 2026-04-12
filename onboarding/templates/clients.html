@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+{% block title %}Clients{% endblock %}
+{% block page_title %}Clients{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('add_client') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-person-plus me-1"></i>Add Client
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex align-items-center gap-3">
+    <form class="d-flex gap-2 flex-grow-1" method="get">
+      <input class="form-control form-control-sm" name="q" value="{{ q }}"
+             placeholder="Search name, business, phone…">
+      <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-search"></i></button>
+      {% if q %}<a href="{{ url_for('clients') }}" class="btn btn-outline-danger btn-sm">Clear</a>{% endif %}
+    </form>
+    <span class="text-muted small text-nowrap">{{ clients|length }} client{{ 's' if clients|length != 1 }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if clients %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Business</th>
+            <th>Phone</th>
+            <th>Location</th>
+            <th>Routers</th>
+            <th>Added</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in clients %}
+          <tr>
+            <td>
+              <a href="{{ url_for('client_detail', client_id=c.id) }}" class="fw-semibold text-decoration-none">
+                {{ c.name }}
+              </a>
+            </td>
+            <td class="text-muted small">{{ c.business_name or '—' }}</td>
+            <td class="text-muted small">{{ c.phone or '—' }}</td>
+            <td class="text-muted small">{{ c.location or '—' }}</td>
+            <td>
+              <span class="badge bg-secondary-subtle text-secondary">{{ c.routers|length }}</span>
+            </td>
+            <td class="text-muted small">{{ c.created_at.strftime('%b %d, %Y') }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('client_detail', client_id=c.id) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a href="{{ url_for('edit_client', client_id=c.id) }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button class="btn btn-sm btn-outline-danger"
+                      onclick="confirmDelete('{{ url_for('delete_client', client_id=c.id) }}', '{{ c.name }}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-people fs-1 d-block mb-3 opacity-25"></i>
+      {% if q %}
+        No clients matching "{{ q }}"
+      {% else %}
+        No clients yet. <a href="{{ url_for('onboard') }}">Onboard your first client!</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h6 class="modal-title">Delete client?</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-muted small" id="deleteModalBody"></div>
+      <div class="modal-footer border-0 pt-0">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteForm" method="post">
+          <button class="btn btn-sm btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(url, name) {
+  document.getElementById('deleteForm').action = url;
+  document.getElementById('deleteModalBody').textContent =
+    'This will permanently delete "' + name + '" and all their routers.';
+  new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}
