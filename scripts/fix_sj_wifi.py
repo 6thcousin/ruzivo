@@ -40,7 +40,7 @@ c("wifi1 channel set", lambda: api.get_resource("/interface/wifi")
 print("\n[3] Fixing bridge (disable RSTP, disable fast-forward)...")
 bridges = api.get_resource("/interface/bridge").get()
 for b in bridges:
-    c(f"bridge {b.get('name')}", lambda bid=b[".id"]:
+    c(f"bridge {b.get('name')}", lambda bid=(b.get(".id") or b.get("id") or b.get("name")):
       api.get_resource("/interface/bridge").call("set", {
           "numbers": bid, "protocol-mode": "none", "fast-forward": "no"
       }))
@@ -49,7 +49,7 @@ for b in bridges:
 print("\n[4] Fixing DHCP (addresses-per-mac=0, lease-time=30m)...")
 servers = api.get_resource("/ip/dhcp-server").get()
 for s in servers:
-    c(f"dhcp {s.get('name')}", lambda sid=s[".id"]:
+    c(f"dhcp {s.get('name')}", lambda sid=(s.get(".id") or s.get("id") or s.get("name")):
       api.get_resource("/ip/dhcp-server").call("set", {
           "numbers": sid, "lease-time": "30m", "addresses-per-mac": "0"
       }))
@@ -59,7 +59,7 @@ print("\n[5] Clearing stale DHCP leases...")
 leases = api.get_resource("/ip/dhcp-server/lease").get()
 stale  = [l for l in leases if l.get("status") in ("expired", "abandoned")]
 for l in stale:
-    api.get_resource("/ip/dhcp-server/lease").remove(id=l[".id"])
+    api.get_resource("/ip/dhcp-server/lease").remove(id=l.get(".id") or l.get("id"))
 print(f"  [✓] Removed {len(stale)} stale lease(s)")
 
 # ── Clear blocked bindings ────────────────────────────────────────────────────
@@ -67,14 +67,14 @@ print("\n[6] Clearing blocked IP bindings...")
 binds   = api.get_resource("/ip/hotspot/ip-binding").get()
 blocked = [b for b in binds if b.get("type") == "blocked"]
 for b in blocked:
-    api.get_resource("/ip/hotspot/ip-binding").remove(id=b[".id"])
+    api.get_resource("/ip/hotspot/ip-binding").remove(id=b.get(".id") or b.get("id"))
 print(f"  [✓] Removed {len(blocked)} blocked binding(s)")
 
 # ── Hotspot keepalive ─────────────────────────────────────────────────────────
 print("\n[7] Setting hotspot keepalive-timeout=2m...")
 hs = api.get_resource("/ip/hotspot").get()
 for h in hs:
-    c(f"hotspot {h.get('name')}", lambda hid=h[".id"]:
+    c(f"hotspot {h.get('name')}", lambda hid=(h.get(".id") or h.get("id") or h.get("name")):
       api.get_resource("/ip/hotspot").call("set", {
           "numbers": hid, "keepalive-timeout": "2m"
       }))
@@ -82,10 +82,12 @@ for h in hs:
 # ── Restart hotspot ───────────────────────────────────────────────────────────
 print("\n[8] Restarting hotspot...")
 for h in hs:
-    api.get_resource("/ip/hotspot").call("set", {"numbers": h[".id"], "disabled": "yes"})
+    hid = h.get(".id") or h.get("id") or h.get("name")
+    api.get_resource("/ip/hotspot").call("set", {"numbers": hid, "disabled": "yes"})
 time.sleep(2)
 for h in hs:
-    api.get_resource("/ip/hotspot").call("set", {"numbers": h[".id"], "disabled": "no"})
+    hid = h.get(".id") or h.get("id") or h.get("name")
+    api.get_resource("/ip/hotspot").call("set", {"numbers": hid, "disabled": "no"})
 print(f"  [✓] Hotspot restarted")
 
 # ── Verify ────────────────────────────────────────────────────────────────────

@@ -289,10 +289,12 @@ def _restart_hotspot(api):
     if not hs:
         return "No hotspot configured."
     for h in hs:
-        api.get_resource("/ip/hotspot").call("set", {"numbers": h[".id"], "disabled": "yes"})
+        hid = h.get(".id") or h.get("id") or h.get("name")
+        api.get_resource("/ip/hotspot").call("set", {"numbers": hid, "disabled": "yes"})
     time.sleep(2)
     for h in hs:
-        api.get_resource("/ip/hotspot").call("set", {"numbers": h[".id"], "disabled": "no"})
+        hid = h.get(".id") or h.get("id") or h.get("name")
+        api.get_resource("/ip/hotspot").call("set", {"numbers": hid, "disabled": "no"})
     return f"[✓] Hotspot restarted ({len(hs)} instance(s))"
 
 
@@ -304,8 +306,9 @@ def _apply_wifi_fixes(api):
     try:
         bridges = api.get_resource("/interface/bridge").get()
         for b in bridges:
+            bid = b.get(".id") or b.get("id") or b.get("name")
             api.get_resource("/interface/bridge").call("set", {
-                "numbers": b[".id"], "protocol-mode": "none", "fast-forward": "no"
+                "numbers": bid, "protocol-mode": "none", "fast-forward": "no"
             })
         out.append(f"[✓] Bridge: protocol-mode=none, fast-forward=no ({len(bridges)} bridge(s))")
     except Exception as e:
@@ -315,8 +318,9 @@ def _apply_wifi_fixes(api):
     try:
         servers = api.get_resource("/ip/dhcp-server").get()
         for s in servers:
+            sid = s.get(".id") or s.get("id") or s.get("name")
             api.get_resource("/ip/dhcp-server").call("set", {
-                "numbers": s[".id"], "lease-time": "30m", "addresses-per-mac": "0"
+                "numbers": sid, "lease-time": "30m", "addresses-per-mac": "0"
             })
         out.append(f"[✓] DHCP: addresses-per-mac=0, lease-time=30m ({len(servers)} server(s))")
     except Exception as e:
@@ -326,8 +330,9 @@ def _apply_wifi_fixes(api):
     try:
         hs = api.get_resource("/ip/hotspot").get()
         for h in hs:
+            hid = h.get(".id") or h.get("id") or h.get("name")
             api.get_resource("/ip/hotspot").call("set", {
-                "numbers": h[".id"], "keepalive-timeout": "2m"
+                "numbers": hid, "keepalive-timeout": "2m"
             })
         out.append(f"[✓] Hotspot: keepalive-timeout=2m ({len(hs)} instance(s))")
     except Exception as e:
@@ -339,7 +344,8 @@ def _apply_wifi_fixes(api):
         rules = r.get()
         rejects = [x for x in rules if x.get("action") == "reject"]
         for x in rejects:
-            r.remove(id=x[".id"])
+            xid = x.get(".id") or x.get("id")
+            r.remove(id=xid)
         out.append(f"[✓] WiFi access-list: removed {len(rejects)} reject rule(s)")
     except Exception as e:
         out.append(f"[!] WiFi access-list error: {e}")
@@ -375,7 +381,8 @@ def _apply_wifi_fixes(api):
         binds   = api.get_resource("/ip/hotspot/ip-binding")
         blocked = [b for b in binds.get() if b.get("type") == "blocked"]
         for b in blocked:
-            binds.remove(id=b[".id"])
+            bid = b.get(".id") or b.get("id")
+            binds.remove(id=bid)
         out.append(f"[✓] Cleared {len(blocked)} blocked IP binding(s)")
     except Exception as e:
         out.append(f"[!] IP binding clear error: {e}")
@@ -386,7 +393,8 @@ def _apply_wifi_fixes(api):
         leases   = leases_r.get()
         stale    = [l for l in leases if l.get("status") in ("expired", "abandoned")]
         for l in stale:
-            leases_r.remove(id=l[".id"])
+            lid = l.get(".id") or l.get("id")
+            leases_r.remove(id=lid)
         out.append(f"[✓] Cleared {len(stale)} stale DHCP lease(s)")
     except Exception as e:
         out.append(f"[!] DHCP lease clear error: {e}")
