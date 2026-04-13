@@ -131,14 +131,22 @@
        class="nav-link {% if request.endpoint == 'routers_all' %}active{% endif %}">
       <i class="bi bi-router-fill"></i> All Routers
     </a>
+    <a href="{{ url_for('settings') }}"
+       class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
+      <i class="bi bi-gear-fill"></i> Settings
+    </a>
     <hr style="border-color:rgba(255,255,255,.06); margin:.5rem 0">
     <a href="{{ url_for('onboard') }}" class="nav-link btn-onboard">
       <i class="bi bi-plus-circle-fill me-1"></i> Onboard New Client
     </a>
   </nav>
   <div class="flex-grow-1"></div>
-  <div class="sidebar-footer">
-    <small>ZivoPay Onboarding v1.0</small>
+  <div class="sidebar-footer d-flex align-items-center justify-content-between">
+    <small style="color:#475569">ZivoPay Onboarding v2.0</small>
+    <a href="{{ url_for('logout') }}" class="text-decoration-none" title="Logout"
+       style="color:#475569;font-size:.85rem">
+      <i class="bi bi-box-arrow-right"></i>
+    </a>
   </div>
 </div>
 

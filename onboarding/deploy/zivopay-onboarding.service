@@ -1,0 +1,26 @@
+[Unit]
+Description=ZivoPay Onboarding — Flask/Gunicorn
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/zivopay-onboarding
+Environment="SECRET_KEY=CHANGE_THIS_TO_A_RANDOM_STRING"
+Environment="ADMIN_USER=admin"
+Environment="ADMIN_PASS=zivopay2026"
+Environment="WG_INTERFACE=wg0"
+Environment="VPS_WG_IP=10.0.0.1"
+Environment="WG_SUBNET=10.0.0.0/24"
+Environment="PORT=5001"
+ExecStart=/opt/zivopay-onboarding/venv/bin/gunicorn \
+    --workers 2 \
+    --bind 127.0.0.1:5001 \
+    --timeout 60 \
+    --access-logfile /var/log/zivopay-onboarding.log \
+    --error-logfile /var/log/zivopay-onboarding.log \
+    app:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
