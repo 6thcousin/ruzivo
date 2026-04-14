@@ -71,7 +71,7 @@
       {% if q %}
         No clients matching "{{ q }}"
       {% else %}
-        No clients yet. <a href="{{ url_for('onboard') }}">Onboard your first client!</a>
+        No clients yet. <a href="{{ url_for('onboard.wizard') }}">Onboard your first client!</a>
       {% endif %}
     </div>
     {% endif %}

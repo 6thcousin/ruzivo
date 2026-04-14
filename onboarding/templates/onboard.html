@@ -29,7 +29,7 @@
     <i class="bi bi-person-circle me-2 text-primary"></i>Step 1 — Client Information
   </div>
   <div class="card-body">
-    <form method="post" action="{{ url_for('onboard') }}">
+    <form method="post" action="{{ url_for('onboard.wizard') }}">
       <input type="hidden" name="step" value="1">
       <input type="hidden" name="data" value="{{ data | tojson | e }}">
       <div class="row g-3">
@@ -86,7 +86,7 @@
     <span class="text-muted small ms-2">for {{ data.client.name }}</span>
   </div>
   <div class="card-body">
-    <form method="post" action="{{ url_for('onboard') }}" id="step2-form">
+    <form method="post" action="{{ url_for('onboard.wizard') }}" id="step2-form">
       <input type="hidden" name="step" value="2">
       <input type="hidden" name="data" value="{{ data | tojson | e }}">
       <div class="row g-3">
@@ -168,7 +168,7 @@
 
       <hr class="my-3">
       <div class="d-flex justify-content-between">
-        <a href="{{ url_for('onboard') }}" class="btn btn-outline-secondary">
+        <a href="{{ url_for('onboard.wizard') }}" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left me-1"></i>Back
         </a>
         <button type="submit" class="btn btn-primary px-4">
@@ -240,7 +240,7 @@
       </div>
     </div>
 
-    <form method="post" action="{{ url_for('onboard') }}" class="mt-3">
+    <form method="post" action="{{ url_for('onboard.wizard') }}" class="mt-3">
       <input type="hidden" name="step" value="3">
       <input type="hidden" name="data" value="{{ data | tojson | e }}">
       <div class="d-flex justify-content-between">
