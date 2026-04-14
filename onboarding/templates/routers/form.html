@@ -1,0 +1,124 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }} — ZivoPay{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('clients.detail', client_id=client.id) }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ client.name }}
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-router me-2"></i>{{ title }}</div>
+      <div class="card-body">
+        <form method="POST" id="router-form">
+          <div class="row g-3">
+            <!-- Basic info -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Router Name *</label>
+              <input name="name" class="form-control" required value="{{ router.name if router else '' }}" placeholder="e.g. sj_enterprises">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">SSID (WiFi name)</label>
+              <input name="ssid" class="form-control" value="{{ router.ssid if router else '' }}" placeholder="e.g. S & J Enterprises">
+            </div>
+
+            <!-- Connection -->
+            <div class="col-12"><hr class="my-1"><p class="fw-semibold text-muted small mb-0">CONNECTION</p></div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Connection Type</label>
+              <select name="connection_type" class="form-select" id="conn-type" onchange="toggleWG()">
+                <option value="wireguard" {% if not router or router.connection_type=='wireguard' %}selected{% endif %}>WireGuard (VPN)</option>
+                <option value="local"     {% if router and router.connection_type=='local' %}selected{% endif %}>Local / Direct</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-semibold">Host / IP *</label>
+              <input name="host" class="form-control" required value="{{ router.host if router else '' }}" placeholder="10.0.0.8">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">API Port</label>
+              <input name="port" class="form-control" type="number" value="{{ router.port if router else 8728 }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Username</label>
+              <input name="username" class="form-control" value="{{ router.username if router else 'admin' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Password</label>
+              <input name="password" class="form-control" type="password" value="{{ router.password if router else '' }}">
+            </div>
+
+            <!-- WireGuard -->
+            <div id="wg-section">
+              <div class="col-12"><hr class="my-1"><p class="fw-semibold text-muted small mb-0">WIREGUARD</p></div>
+              <div class="row g-3 mt-0">
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold">WG IP</label>
+                  <input name="wg_ip" class="form-control font-monospace" value="{{ router.wg_ip if router else '' }}" placeholder="10.0.0.8">
+                </div>
+                <div class="col-md-8">
+                  <label class="form-label fw-semibold">Router WG Public Key</label>
+                  <input name="wg_public_key" class="form-control font-monospace" value="{{ router.wg_public_key if router else '' }}" style="font-size:.78rem">
+                </div>
+              </div>
+            </div>
+
+            <!-- Test connection -->
+            <div class="col-12">
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="testConn()">
+                <i class="bi bi-plug me-1"></i>Test Connection
+              </button>
+              <span id="test-result" class="ms-2 small"></span>
+            </div>
+
+            <!-- Notes -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Notes</label>
+              <textarea name="notes" class="form-control" rows="2">{{ router.notes if router else '' }}</textarea>
+            </div>
+
+            <div class="col-12 d-flex gap-2 justify-content-end">
+              <a href="{{ url_for('clients.detail', client_id=client.id) }}" class="btn btn-outline-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>{{ 'Save Changes' if router else 'Add Router' }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleWG() {
+  const wg = document.getElementById('wg-section');
+  wg.style.display = document.getElementById('conn-type').value === 'wireguard' ? '' : 'none';
+}
+toggleWG();
+
+function testConn() {
+  const el  = document.getElementById('test-result');
+  const form = document.getElementById('router-form');
+  const fd   = new FormData();
+  fd.append('host',     form.querySelector('[name=host]').value);
+  fd.append('port',     form.querySelector('[name=port]').value);
+  fd.append('username', form.querySelector('[name=username]').value);
+  fd.append('password', form.querySelector('[name=password]').value);
+  el.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Testing…</span>';
+  fetch('/api/routers/test-adhoc', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success)
+        el.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${d.identity} — ${d.board} v${d.version}</span>`;
+      else
+        el.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${d.error}</span>`;
+    });
+}
+</script>
+{% endblock %}

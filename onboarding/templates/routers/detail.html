@@ -1,0 +1,216 @@
+{% extends "layout.html" %}
+{% block title %}{{ router.name }} — Router{% endblock %}
+{% block page_title %}
+  <span class="dot dot-gray me-2" id="status-dot"></span>{{ router.name }}
+{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('clients.detail', client_id=router.client_id) }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ router.client.name }}
+  </a>
+  <a href="{{ url_for('routers.edit', router_id=router.id) }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-pencil"></i>
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- Left panel: info + stats -->
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-info-circle me-2"></i>Connection</div>
+      <div class="card-body small">
+        <table class="table table-sm table-borderless mb-0">
+          <tr><td class="text-muted">Host</td><td class="font-monospace fw-semibold">{{ router.host }}</td></tr>
+          <tr><td class="text-muted">Port</td><td>{{ router.port }}</td></tr>
+          <tr><td class="text-muted">User</td><td>{{ router.username }}</td></tr>
+          <tr><td class="text-muted">Type</td>
+            <td><span class="badge badge-{{ 'wg' if router.connection_type == 'wireguard' else 'local' }}">
+              {{ 'WireGuard' if router.connection_type == 'wireguard' else 'Local' }}</span></td></tr>
+          {% if router.wg_ip %}<tr><td class="text-muted">WG IP</td><td class="font-monospace">{{ router.wg_ip }}</td></tr>{% endif %}
+          {% if router.ssid %}<tr><td class="text-muted">SSID</td><td><i class="bi bi-wifi me-1"></i>{{ router.ssid }}</td></tr>{% endif %}
+          {% if router.notes %}<tr><td class="text-muted">Notes</td><td>{{ router.notes }}</td></tr>{% endif %}
+        </table>
+        <button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="testConn()">
+          <i class="bi bi-plug me-1"></i>Test Connection
+        </button>
+        <div id="test-result" class="mt-2 small"></div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-activity me-2 text-success"></i>Live Stats</span>
+        <button class="btn btn-sm btn-outline-secondary p-1 px-2" onclick="loadStats()">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+      <div class="card-body" id="stats-body">
+        <div class="text-center text-muted py-3 small">
+          <div class="spinner-border spinner-border-sm me-1"></div> Loading…
+        </div>
+      </div>
+    </div>
+
+    <div class="card border-danger border-opacity-25">
+      <div class="card-header text-danger small"><i class="bi bi-exclamation-triangle me-2"></i>Danger Zone</div>
+      <div class="card-body d-grid gap-2">
+        <button class="btn btn-outline-danger btn-sm"
+                onclick="if(confirm('Reboot {{ router.name }}?')) runCmd('reboot','Reboot')">
+          <i class="bi bi-power me-1"></i>Reboot Router
+        </button>
+        <form method="POST" action="{{ url_for('routers.delete', router_id=router.id) }}"
+              onsubmit="return confirm('Delete router {{ router.name }}?')">
+          <button class="btn btn-outline-danger btn-sm w-100">
+            <i class="bi bi-trash me-1"></i>Delete Router
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel: terminal + commands -->
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-terminal me-2"></i>Commands</div>
+      <div class="card-body pb-2">
+        <div class="row g-2 mb-3">
+          {% for key, (label, icon) in commands.items() %}
+          {% if key != 'reboot' %}
+          <div class="col-6 col-sm-4 col-md-3">
+            <button class="btn btn-outline-secondary cmd-btn w-100
+                    {% if key == 'apply_wifi_fixes' %}text-success border-success{% endif %}"
+                    onclick="runCmd('{{ key }}','{{ label }}')">
+              <i class="{{ icon }} me-1"></i>{{ label }}
+            </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <div class="input-group">
+          <span class="input-group-text font-monospace text-muted small">$</span>
+          <input type="text" id="raw-cmd" class="form-control font-monospace"
+                 placeholder="/ip/address  or  /system/resource  etc."
+                 onkeydown="if(event.key==='Enter') runRaw()">
+          <button class="btn btn-outline-primary" onclick="runRaw()">Run</button>
+        </div>
+        <div class="text-muted mt-1" style="font-size:.72rem">RouterOS API path (e.g. <code>/ip/hotspot/active</code>)</div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-display-fill me-2"></i>Output</span>
+        <span id="cmd-label" class="text-muted small font-monospace"></span>
+        <button class="btn btn-sm btn-outline-secondary p-1 px-2" onclick="clearTerminal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="terminal" id="terminal"><span class="dim">── ready ──</span></div>
+    </div>
+
+    {% if logs %}
+    <div class="card">
+      <div class="card-header"><i class="bi bi-clock-history me-2 text-muted"></i>Command History</div>
+      <div class="card-body p-0">
+        <div style="max-height:260px;overflow-y:auto">
+          <table class="table table-sm table-hover mb-0 small">
+            <thead class="table-light sticky-top">
+              <tr><th>Command</th><th>Status</th><th>Time</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for log in logs %}
+              <tr>
+                <td class="font-monospace">{{ log.command[:50] }}{% if log.command|length > 50 %}…{% endif %}</td>
+                <td><span class="badge {{ 'bg-success' if log.status=='success' else 'bg-danger' }} bg-opacity-75">{{ log.status }}</span></td>
+                <td class="text-muted">{{ log.executed_at.strftime('%b %d %H:%M') }}</td>
+                <td><button class="btn btn-sm py-0 btn-link text-muted"
+                            onclick="showHistory(this)" data-output="{{ log.output | e }}">view</button></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ROUTER_ID = {{ router.id }};
+
+function loadStats() {
+  fetch(`/api/routers/${ROUTER_ID}/stats`).then(r => r.json()).then(d => {
+    const dot = document.getElementById('status-dot');
+    if (d.success) {
+      dot.className = 'dot dot-green me-2';
+      document.getElementById('stats-body').innerHTML = `
+        <div class="row g-2 text-center">
+          <div class="col-6"><div class="p-2 rounded bg-light"><div class="text-muted" style="font-size:.7rem">CPU</div><div class="fw-bold">${d.cpu_load}</div></div></div>
+          <div class="col-6"><div class="p-2 rounded bg-light"><div class="text-muted" style="font-size:.7rem">Memory</div><div class="fw-bold">${d.memory.split('(')[0]}</div></div></div>
+          <div class="col-6"><div class="p-2 rounded bg-success bg-opacity-10"><div class="text-muted" style="font-size:.7rem">Sessions</div><div class="fw-bold text-success">${d.sessions}</div></div></div>
+          <div class="col-6"><div class="p-2 rounded bg-info bg-opacity-10"><div class="text-muted" style="font-size:.7rem">WiFi</div><div class="fw-bold text-info">${d.wifi_peers}</div></div></div>
+        </div>
+        <div class="mt-2 text-muted small"><i class="bi bi-clock me-1"></i>${d.uptime} · v${d.version}</div>`;
+    } else {
+      dot.className = 'dot dot-red me-2';
+      document.getElementById('stats-body').innerHTML =
+        `<div class="text-danger small"><i class="bi bi-exclamation-triangle me-1"></i>${d.error}</div>`;
+    }
+  });
+}
+
+function testConn() {
+  const el = document.getElementById('test-result');
+  el.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Testing…</span>';
+  fetch(`/api/routers/${ROUTER_ID}/test`).then(r => r.json()).then(d => {
+    if (d.success) {
+      el.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${d.identity} — ${d.board}</span>`;
+      document.getElementById('status-dot').className = 'dot dot-green me-2';
+    } else {
+      el.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${d.error}</span>`;
+      document.getElementById('status-dot').className = 'dot dot-red me-2';
+    }
+  });
+}
+
+function writeTerminal(text, err) {
+  const t = document.getElementById('terminal');
+  t.textContent = text;
+  t.className = 'terminal' + (err ? ' err-line' : '');
+}
+function clearTerminal() {
+  document.getElementById('terminal').textContent = '── cleared ──';
+  document.getElementById('cmd-label').textContent = '';
+}
+function setLoading(label) {
+  document.getElementById('terminal').innerHTML =
+    '<span class="dim"><span class="spinner-border spinner-border-sm me-1"></span>Running: ' + label + '…</span>';
+  document.getElementById('cmd-label').textContent = label;
+}
+function runCmd(key, label) {
+  setLoading(label);
+  const fd = new FormData(); fd.append('cmd_key', key);
+  fetch(`/api/routers/${ROUTER_ID}/command`, { method:'POST', body:fd })
+    .then(r => r.json()).then(d => writeTerminal(d.output || d.error || '(no output)', !d.success));
+}
+function runRaw() {
+  const cmd = document.getElementById('raw-cmd').value.trim();
+  if (!cmd) return;
+  setLoading(cmd);
+  const fd = new FormData(); fd.append('raw_cmd', cmd);
+  fetch(`/api/routers/${ROUTER_ID}/command`, { method:'POST', body:fd })
+    .then(r => r.json()).then(d => writeTerminal(d.output || d.error || '(no output)', !d.success));
+}
+function showHistory(btn) {
+  writeTerminal(btn.dataset.output, false);
+  document.getElementById('cmd-label').textContent = '(history)';
+}
+
+loadStats();
+setInterval(loadStats, 30000);
+</script>
+{% endblock %}

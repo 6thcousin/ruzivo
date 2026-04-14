@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }} — ZivoPay{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block topbar_actions %}
+  {% if client %}
+  <a href="{{ url_for('clients.detail', client_id=client.id) }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-person-fill me-2"></i>{{ title }}</div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Full Name *</label>
+              <input name="name" class="form-control" required value="{{ client.name if client else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Business Name</label>
+              <input name="business_name" class="form-control" value="{{ client.business_name if client else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Phone</label>
+              <input name="phone" class="form-control" value="{{ client.phone if client else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Email</label>
+              <input name="email" type="email" class="form-control" value="{{ client.email if client else '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Location</label>
+              <input name="location" class="form-control" value="{{ client.location if client else '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Notes</label>
+              <textarea name="notes" class="form-control" rows="3">{{ client.notes if client else '' }}</textarea>
+            </div>
+            <div class="col-12 d-flex gap-2 justify-content-end">
+              {% if client %}
+              <a href="{{ url_for('clients.detail', client_id=client.id) }}" class="btn btn-outline-secondary">Cancel</a>
+              {% else %}
+              <a href="{{ url_for('clients.list_clients') }}" class="btn btn-outline-secondary">Cancel</a>
+              {% endif %}
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>{{ 'Save Changes' if client else 'Add Client' }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

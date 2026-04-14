@@ -119,31 +119,31 @@
     <div class="sub">Onboarding Manager</div>
   </div>
   <nav class="mt-1">
-    <a href="{{ url_for('dashboard') }}"
-       class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+    <a href="{{ url_for('dashboard.index') }}"
+       class="nav-link {% if request.blueprint == 'dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2-fill"></i> Dashboard
     </a>
-    <a href="{{ url_for('clients') }}"
-       class="nav-link {% if 'client' in (request.endpoint or '') %}active{% endif %}">
+    <a href="{{ url_for('clients.list_clients') }}"
+       class="nav-link {% if request.blueprint == 'clients' %}active{% endif %}">
       <i class="bi bi-people-fill"></i> Clients
     </a>
-    <a href="{{ url_for('routers_all') }}"
-       class="nav-link {% if request.endpoint == 'routers_all' %}active{% endif %}">
+    <a href="{{ url_for('routers.list_routers') }}"
+       class="nav-link {% if request.blueprint == 'routers' %}active{% endif %}">
       <i class="bi bi-router-fill"></i> All Routers
     </a>
-    <a href="{{ url_for('settings') }}"
-       class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
+    <a href="{{ url_for('settings.index') }}"
+       class="nav-link {% if request.blueprint == 'settings' %}active{% endif %}">
       <i class="bi bi-gear-fill"></i> Settings
     </a>
     <hr style="border-color:rgba(255,255,255,.06); margin:.5rem 0">
-    <a href="{{ url_for('onboard') }}" class="nav-link btn-onboard">
+    <a href="{{ url_for('onboard.wizard') }}" class="nav-link btn-onboard">
       <i class="bi bi-plus-circle-fill me-1"></i> Onboard New Client
     </a>
   </nav>
   <div class="flex-grow-1"></div>
   <div class="sidebar-footer d-flex align-items-center justify-content-between">
-    <small style="color:#475569">ZivoPay Onboarding v2.0</small>
-    <a href="{{ url_for('logout') }}" class="text-decoration-none" title="Logout"
+    <small style="color:#475569">ZivoPay Service Center v2</small>
+    <a href="{{ url_for('auth.logout') }}" class="text-decoration-none" title="Logout"
        style="color:#475569;font-size:.85rem">
       <i class="bi bi-box-arrow-right"></i>
     </a>
