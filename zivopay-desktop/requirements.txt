@@ -1,0 +1,6 @@
+flask>=3.0
+paramiko>=3.0
+routeros-api>=0.0.2
+Pillow>=10.0
+pywebview>=4.4
+rembg>=2.0
