@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Done — {{ client.business_name or client.name }}{% endblock %}
+
+{% block content %}
+
+<!-- Steps -->
+<div class="d-flex align-items-center gap-2 mb-4">
+  <span class="step-badge step-done"><i class="bi bi-check-lg" style="font-size:.7rem"></i></span>
+  <span class="small text-muted">Client Details</span>
+  <div class="flex-grow-1 border-bottom border-secondary mx-2"></div>
+  <span class="step-badge step-done"><i class="bi bi-check-lg" style="font-size:.7rem"></i></span>
+  <span class="small text-muted">Bootstrap</span>
+  <div class="flex-grow-1 border-bottom border-secondary mx-2"></div>
+  <span class="step-badge step-active">3</span>
+  <span class="small fw-semibold">Done</span>
+</div>
+
+<div class="card text-center py-4 px-3">
+  <div style="font-size:3.5rem;color:var(--green)">
+    <i class="bi bi-check-circle-fill"></i>
+  </div>
+  <h5 class="fw-bold mt-3 mb-1">{{ client.business_name or client.name }} Onboarded!</h5>
+  <p class="text-muted small mb-4">The client is registered and the MikroTik is configured.</p>
+
+  <!-- Summary -->
+  <div class="card mx-auto mb-4" style="max-width:340px;text-align:left">
+    <div class="card-body py-3 px-3">
+      <div class="row g-2 small">
+        <div class="col-5 text-muted">Client</div>
+        <div class="col-7 fw-semibold">{{ client.name }}</div>
+
+        {% if client.business_name %}
+        <div class="col-5 text-muted">Business</div>
+        <div class="col-7">{{ client.business_name }}</div>
+        {% endif %}
+
+        {% if client.location %}
+        <div class="col-5 text-muted">Location</div>
+        <div class="col-7">{{ client.location }}</div>
+        {% endif %}
+
+        {% if client.phone %}
+        <div class="col-5 text-muted">Phone</div>
+        <div class="col-7">{{ client.phone }}</div>
+        {% endif %}
+
+        <div class="col-5 text-muted">SSID</div>
+        <div class="col-7"><i class="bi bi-wifi me-1"></i>{{ client.ssid }}</div>
+
+        <div class="col-5 text-muted">WireGuard IP</div>
+        <div class="col-7"><span class="badge-wg px-2 py-1">{{ client.wg_ip }}</span></div>
+
+        <div class="col-5 text-muted">Status</div>
+        <div class="col-7">
+          {% if client.status == 'active' %}
+            <span class="text-success fw-semibold">● Active</span>
+          {% else %}
+            <span class="text-warning fw-semibold">⚠ {{ client.status }}</span>
+          {% endif %}
+        </div>
+
+        {% if client.wg_public_key %}
+        <div class="col-12 mt-1">
+          <div class="text-muted mb-1">WireGuard Public Key</div>
+          <div style="font-family:monospace;font-size:.72rem;word-break:break-all;color:#60a5fa">
+            {{ client.wg_public_key }}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 justify-content-center flex-wrap">
+    <a href="{{ url_for('new_client') }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i>Onboard Another
+    </a>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-list-ul me-1"></i>All Clients
+    </a>
+    <a href="{{ url_for('bootstrap', client_id=client.id) }}" class="btn btn-outline-secondary">
+      <i class="bi bi-code-slash me-1"></i>View Script
+    </a>
+  </div>
+</div>
+
+{% endblock %}

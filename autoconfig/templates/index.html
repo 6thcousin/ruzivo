@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Clients — ZivoPay AutoConfig{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6">
+    <div class="stat-pill text-center">
+      <div class="text-muted small mb-1">Total Clients</div>
+      <div class="fw-bold fs-4">{{ clients|length }}</div>
+    </div>
+  </div>
+  <div class="col-6">
+    <div class="stat-pill text-center">
+      <div class="text-muted small mb-1">Active VPN</div>
+      <div class="fw-bold fs-4 text-success">
+        {{ clients|selectattr('status','equalto','active')|list|length }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Client list -->
+<div class="card">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <span><i class="bi bi-people-fill me-2 text-gold"></i>Onboarded Clients</span>
+    <a href="{{ url_for('new_client') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>New Client
+    </a>
+  </div>
+
+  {% if clients %}
+  <div class="list-group list-group-flush">
+    {% for c in clients %}
+    <div class="list-group-item bg-transparent border-secondary py-3 px-3">
+      <div class="d-flex align-items-start justify-content-between gap-2">
+        <div class="flex-grow-1">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="fw-bold">{{ c.business_name or c.name }}</span>
+            {% if c.status == 'active' %}
+              <span class="badge bg-success bg-opacity-25 text-success" style="font-size:.65rem">● ACTIVE</span>
+            {% elif c.status == 'pending' %}
+              <span class="badge bg-warning bg-opacity-25 text-warning" style="font-size:.65rem">⏳ PENDING KEY</span>
+            {% else %}
+              <span class="badge bg-secondary bg-opacity-25 text-secondary" style="font-size:.65rem">{{ c.status }}</span>
+            {% endif %}
+          </div>
+          <div class="d-flex flex-wrap gap-2 small text-muted">
+            <span><i class="bi bi-wifi me-1"></i>{{ c.ssid }}</span>
+            {% if c.location %}<span><i class="bi bi-geo-alt me-1"></i>{{ c.location }}</span>{% endif %}
+            <span class="badge-wg px-2 py-1">{{ c.wg_ip }}</span>
+          </div>
+          <div class="text-muted" style="font-size:.72rem;margin-top:.25rem">
+            {{ c.created_at[:16] if c.created_at else '' }}
+          </div>
+        </div>
+        <div class="d-flex gap-1 flex-shrink-0">
+          <a href="{{ url_for('bootstrap', client_id=c.id) }}"
+             class="btn btn-sm btn-outline-secondary" title="View bootstrap">
+            <i class="bi bi-code-slash"></i>
+          </a>
+          <a href="{{ url_for('done', client_id=c.id) }}"
+             class="btn btn-sm btn-outline-primary" title="Details">
+            <i class="bi bi-eye"></i>
+          </a>
+          <form method="post" action="{{ url_for('delete_client', client_id=c.id) }}"
+                onsubmit="return confirm('Delete {{ c.name }}?')">
+            <button class="btn btn-sm btn-outline-danger" title="Delete">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-people fs-1 d-block mb-3 opacity-25"></i>
+    <div class="fw-semibold mb-1">No clients yet</div>
+    <a href="{{ url_for('new_client') }}" class="btn btn-primary btn-sm mt-2">
+      <i class="bi bi-plus-lg me-1"></i>Onboard First Client
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
