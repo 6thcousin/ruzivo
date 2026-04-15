@@ -1,32 +1,125 @@
 {% extends "base.html" %}
 {% block title %}Login — ZivoPay AutoConfig{% endblock %}
 
-{% block content %}
-<div class="d-flex justify-content-center align-items-center" style="min-height:80vh">
-  <div class="card p-4" style="width:100%;max-width:380px">
+{% block content %}{% endblock %}
+
+{% block fullpage %}
+<div class="login-wrap">
+
+  <!-- Background logo -->
+  <div class="login-bg-logo">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="">
+  </div>
+
+  <!-- Floating form -->
+  <div class="login-form-wrap">
     <div class="text-center mb-4">
-      <div style="font-size:2.5rem;color:var(--gold)"><i class="bi bi-router-fill"></i></div>
-      <h5 class="fw-bold mt-2 mb-0">ZivoPay AutoConfig</h5>
-      <div class="text-muted small">Technician Portal</div>
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="ZivoPay"
+           style="height:56px;object-fit:contain;filter:drop-shadow(0 0 12px rgba(212,160,23,.4))">
+      <div class="fw-bold mt-3 mb-0" style="font-size:1.15rem;letter-spacing:.04em">ZivoPay AutoConfig</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.45);margin-top:.2rem">Technician Portal</div>
     </div>
 
     {% if error %}
-    <div class="alert alert-danger py-2 small"><i class="bi bi-x-circle me-1"></i>{{ error }}</div>
+    <div class="glass-alert mb-3">
+      <i class="bi bi-x-circle me-1"></i>{{ error }}
+    </div>
     {% endif %}
 
     <form method="POST">
       <div class="mb-3">
-        <label class="form-label">Username</label>
-        <input name="username" class="form-control" placeholder="admin" autocomplete="username">
+        <label class="glass-label">Username</label>
+        <input name="username" class="glass-input" placeholder="admin" autocomplete="username">
       </div>
       <div class="mb-4">
-        <label class="form-label">Password</label>
-        <input name="password" type="password" class="form-control" autocomplete="current-password">
+        <label class="glass-label">Password</label>
+        <input name="password" type="password" class="glass-input" autocomplete="current-password">
       </div>
-      <button class="btn btn-primary w-100 fw-bold">
+      <button class="glass-btn w-100">
         <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
       </button>
     </form>
   </div>
+
 </div>
+
+<style>
+  body { overflow: hidden; }
+
+  .login-wrap {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #0a0d14;
+  }
+
+  /* Big blurred background logo */
+  .login-bg-logo {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .login-bg-logo img {
+    width: min(70vw, 520px);
+    opacity: .06;
+    filter: blur(2px) saturate(0);
+    user-select: none;
+  }
+
+  /* Floating glass form */
+  .login-form-wrap {
+    position: relative; z-index: 2;
+    width: 100%; max-width: 360px;
+    padding: 2.2rem 2rem;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 20px;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 8px 48px rgba(0,0,0,.5), 0 0 0 1px rgba(212,160,23,.08);
+    color: #fff;
+  }
+
+  .glass-label {
+    display: block;
+    font-size: .78rem; font-weight: 600;
+    color: rgba(255,255,255,.5);
+    margin-bottom: .35rem; letter-spacing: .04em; text-transform: uppercase;
+  }
+
+  .glass-input {
+    width: 100%; padding: .65rem .9rem;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 10px; color: #fff; font-size: .92rem;
+    outline: none; transition: border .2s, background .2s;
+  }
+  .glass-input::placeholder { color: rgba(255,255,255,.25); }
+  .glass-input:focus {
+    background: rgba(255,255,255,.11);
+    border-color: rgba(212,160,23,.55);
+    box-shadow: 0 0 0 3px rgba(212,160,23,.12);
+  }
+
+  .glass-btn {
+    padding: .7rem; border-radius: 10px; font-weight: 700; font-size: .95rem;
+    background: rgba(212,160,23,.18);
+    border: 1px solid rgba(212,160,23,.45);
+    color: #f5d06a;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    cursor: pointer; transition: background .2s, box-shadow .2s;
+    letter-spacing: .03em;
+  }
+  .glass-btn:hover {
+    background: rgba(212,160,23,.30);
+    box-shadow: 0 0 18px rgba(212,160,23,.25);
+  }
+
+  .glass-alert {
+    background: rgba(239,68,68,.15);
+    border: 1px solid rgba(239,68,68,.3);
+    border-radius: 8px; padding: .5rem .8rem;
+    font-size: .82rem; color: #fca5a5;
+  }
+</style>
 {% endblock %}
