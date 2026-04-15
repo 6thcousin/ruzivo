@@ -41,16 +41,19 @@
     table { color: #e2e8f0; }
     .table-dark-custom tbody tr:hover { background: rgba(255,255,255,.04); }
     a { color: #60a5fa; }
-    .alert-success { background: #064e3b; border-color: #065f46; color: #6ee7b7; }
-    .alert-warning { background: #451a03; border-color: #78350f; color: #fcd34d; }
-    .alert-danger  { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
+    .alert-success   { background: #064e3b; border-color: #065f46; color: #6ee7b7; }
+    .alert-warning   { background: #451a03; border-color: #78350f; color: #fcd34d; }
+    .alert-danger    { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
     .alert-secondary { background: #1f2937; border-color: #374151; color: #9ca3af; }
   </style>
 </head>
 <body>
+
+{% block fullpage %}
 <nav class="navbar navbar-dark px-3 py-2">
   <a class="navbar-brand" href="{{ url_for('index') }}">
-    <i class="bi bi-router-fill me-2"></i>ZivoPay AutoConfig
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="ZivoPay"
+         style="height:28px;margin-right:.5rem;vertical-align:middle">AutoConfig
   </a>
   <div class="d-flex gap-2 align-items-center">
     <a href="{{ url_for('new_client') }}" class="btn btn-sm btn-primary">
@@ -61,8 +64,6 @@
     </a>
   </div>
 </nav>
-
-{% block fullpage %}
 <div class="container py-4" style="max-width:720px">
   {% with msgs = get_flashed_messages(with_categories=true) %}
     {% for cat, msg in msgs %}
