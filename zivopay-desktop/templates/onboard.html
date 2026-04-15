@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}Onboard Client — ZivoPay{% endblock %}
+{% block page_title %}New Client Onboarding{% endblock %}
+
+{% block content %}
+
+<!-- Step indicator -->
+<div class="d-flex align-items-center gap-2 mb-4">
+  <span class="step-pill {{ 'step-done' if step > 1 else 'step-active' if step == 1 else 'step-pending' }}">
+    <i class="bi bi-{{ 'check-lg' if step > 1 else '1-circle' }}"></i> Client Details
+  </span>
+  <div class="flex-grow-1" style="height:1px;background:#2d3748"></div>
+  <span class="step-pill {{ 'step-done' if step > 2 else 'step-active' if step == 2 else 'step-pending' }}">
+    <i class="bi bi-{{ 'check-lg' if step > 2 else '2-circle' }}"></i> Push Config
+  </span>
+  <div class="flex-grow-1" style="height:1px;background:#2d3748"></div>
+  <span class="step-pill {{ 'step-active' if step == 3 else 'step-pending' }}">
+    <i class="bi bi-3-circle"></i> Register VPN
+  </span>
+</div>
+
+<!-- ── STEP 1: Client details ── -->
+{% if step == 1 %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-person-fill me-2 text-gold"></i>Client Details</div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('onboard_save') }}" enctype="multipart/form-data">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label">Contact Name *</label>
+              <input name="name" class="form-control" required placeholder="e.g. Tendai Moyo">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Business / Site Name</label>
+              <input name="business_name" class="form-control" placeholder="e.g. Viper Connect">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Location</label>
+              <input name="location" class="form-control" placeholder="e.g. Shamva">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Phone</label>
+              <input name="phone" type="tel" class="form-control" placeholder="0771234567">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">WiFi SSID (2.4GHz) *</label>
+              <input name="ssid" class="form-control" required placeholder="e.g. Viper Connect">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">WiFi SSID (5GHz) <span class="text-muted">(optional)</span></label>
+              <input name="ssid_5g" class="form-control" placeholder="e.g. Viper Connect 5G">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Router Admin Password</label>
+              <input name="router_pass" class="form-control" value="558920">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">WireGuard IP <span class="text-muted">(auto)</span></label>
+              <input class="form-control" value="{{ wg_ip }}" disabled
+                     style="font-family:monospace;color:#60a5fa">
+            </div>
+            <div class="col-12">
+              <label class="form-label">
+                Logo
+                {% if not vps_key %}
+                <span class="text-warning small ms-1">
+                  <i class="bi bi-exclamation-triangle me-1"></i>bg removal needs rembg
+                </span>
+                {% endif %}
+              </label>
+              <input name="logo" type="file" class="form-control" accept="image/*">
+              <div class="form-text text-muted" style="font-size:.72rem">
+                Background will be auto-removed. Saved as PNG.
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Notes</label>
+              <textarea name="notes" class="form-control" rows="2"
+                        placeholder="e.g. Cudy AP on ether2, 2-storey building"></textarea>
+            </div>
+          </div>
+          <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-primary btn-lg fw-bold">
+              <i class="bi bi-arrow-right-circle me-2"></i>Next: Connect to Router
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-info-circle me-2 text-info"></i>What happens next</div>
+      <div class="card-body small text-muted">
+        <ol style="padding-left:1.2rem;line-height:2">
+          <li>Fill in client details and upload logo</li>
+          <li>Connect laptop via ethernet to MikroTik</li>
+          <li>App connects via RouterOS API and pushes full config</li>
+          <li>WireGuard tunnel configured automatically</li>
+          <li>Public key read and registered on VPS</li>
+          <li>Client goes live on the network</li>
+        </ol>
+      </div>
+    </div>
+    {% if not vps_key %}
+    <div class="alert alert-warning small">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      <strong>VPS WireGuard public key not set.</strong>
+      Go to <a href="{{ url_for('settings') }}" class="alert-link">Settings</a> and paste it before onboarding.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ── STEP 2: Connect + push config ── -->
+{% elif step == 2 %}
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-router-fill me-2 text-success"></i>
+        Connect to {{ client.business_name or client.name }}'s MikroTik
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="action" id="form-action" value="test">
+          <div class="mb-3">
+            <label class="form-label">Router IP</label>
+            <input name="host" class="form-control" value="{{ host or '192.168.88.1' }}"
+                   placeholder="192.168.88.1">
+            <div class="form-text text-muted" style="font-size:.72rem">
+              Connect laptop via ethernet before proceeding
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-4">
+              <label class="form-label">API Port</label>
+              <input name="port" class="form-control" value="{{ port or '8728' }}">
+            </div>
+            <div class="col-4">
+              <label class="form-label">Username</label>
+              <input name="username" class="form-control" value="{{ username or 'admin' }}">
+            </div>
+            <div class="col-4">
+              <label class="form-label">Password</label>
+              <input name="password" type="password" class="form-control"
+                     value="{{ password or '' }}" placeholder="(blank)">
+            </div>
+          </div>
+
+          {% if test_result %}
+          <div class="alert {{ 'alert-success' if test_result.success else 'alert-danger' }} py-2 small mb-3">
+            {% if test_result.success %}
+              <i class="bi bi-check-circle me-1"></i>
+              <strong>Connected!</strong> {{ test_result.identity }} —
+              {{ test_result.board }}, v{{ test_result.version }}
+            {% else %}
+              <i class="bi bi-x-circle me-1"></i>{{ test_result.error }}
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-outline-success"
+                    onclick="document.getElementById('form-action').value='test'">
+              <i class="bi bi-plug me-2"></i>Test Connection
+            </button>
+            {% if test_result and test_result.success %}
+            <button type="submit" class="btn btn-primary btn-lg fw-bold"
+                    onclick="document.getElementById('form-action').value='push'"
+                    id="push-btn">
+              <i class="bi bi-lightning-fill me-2"></i>Push Full Config to Router
+            </button>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-list-check me-2"></i>Config to be pushed</div>
+      <div class="card-body small text-muted">
+        <table class="table table-sm" style="color:#9ca3af;font-size:.8rem">
+          <tr><td>Identity</td><td class="text-light">{{ client.name }}</td></tr>
+          <tr><td>SSID 2.4G</td><td class="text-light">{{ client.ssid }}</td></tr>
+          {% if client.ssid_5g %}
+          <tr><td>SSID 5G</td><td class="text-light">{{ client.ssid_5g }}</td></tr>
+          {% endif %}
+          <tr><td>WireGuard IP</td><td><span class="badge-wg px-2 py-1">{{ client.wg_ip }}</span></td></tr>
+          <tr><td>LAN IP</td><td class="text-light">192.168.88.1/24</td></tr>
+          <tr><td>DHCP Pool</td><td class="text-light">192.168.88.10–254</td></tr>
+          <tr><td>Hotspot</td><td class="text-success">✓ enabled</td></tr>
+          <tr><td>NAT</td><td class="text-success">✓ masquerade ether1</td></tr>
+          <tr><td>API Service</td><td class="text-success">✓ enabled</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── STEP 3: WireGuard registration result ── -->
+{% elif step == 3 %}
+<div class="row g-3">
+  <div class="col-lg-7">
+
+    <!-- Config push result -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <i class="bi bi-{{ 'check-circle-fill text-success' if ok else 'x-circle-fill text-danger' }} me-2"></i>
+        Config Push {{ 'Successful' if ok else 'Completed with errors' }}
+      </div>
+      <div class="card-body p-0">
+        <div class="terminal" style="border-radius:0 0 12px 12px;max-height:280px">{{ output }}</div>
+      </div>
+    </div>
+
+    <!-- WireGuard registration -->
+    <div class="card">
+      <div class="card-header"><i class="bi bi-shield-lock-fill me-2 text-gold"></i>Register VPN Peer</div>
+      <div class="card-body">
+        {% if wg_key %}
+        <div class="alert alert-success small mb-3">
+          <i class="bi bi-check-circle me-1"></i>
+          WireGuard public key read from router automatically!
+        </div>
+        <div class="mb-3">
+          <label class="form-label">WireGuard Public Key</label>
+          <input class="form-control" style="font-family:monospace;font-size:.82rem"
+                 value="{{ wg_key }}" readonly>
+        </div>
+        <form method="POST" action="{{ url_for('onboard_register', client_id=client.id) }}">
+          <input type="hidden" name="wg_public_key" value="{{ wg_key }}">
+          <button class="btn btn-primary w-100 fw-bold btn-lg">
+            <i class="bi bi-shield-check me-2"></i>Register Peer on VPS &amp; Complete
+          </button>
+        </form>
+        {% else %}
+        <div class="alert alert-warning small mb-3">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          Could not auto-read the WireGuard key. Paste it manually from the router.
+        </div>
+        <form method="POST" action="{{ url_for('onboard_register', client_id=client.id) }}">
+          <div class="mb-3">
+            <label class="form-label">WireGuard Public Key (from router)</label>
+            <input name="wg_public_key" class="form-control"
+                   style="font-family:monospace;font-size:.82rem"
+                   placeholder="base64 key from /interface wireguard print"
+                   required>
+          </div>
+          <button class="btn btn-primary w-100 fw-bold">
+            <i class="bi bi-shield-check me-2"></i>Register &amp; Complete
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-person-fill me-2"></i>Client Summary</div>
+      <div class="card-body small">
+        <table class="table table-sm" style="color:#9ca3af;font-size:.82rem">
+          <tr><td>Name</td><td class="text-light">{{ client.name }}</td></tr>
+          <tr><td>Business</td><td class="text-light">{{ client.business_name or '—' }}</td></tr>
+          <tr><td>SSID</td><td class="text-light">{{ client.ssid }}</td></tr>
+          <tr><td>WG IP</td><td><span class="badge-wg px-2 py-1">{{ client.wg_ip }}</span></td></tr>
+          <tr><td>Location</td><td class="text-light">{{ client.location or '—' }}</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

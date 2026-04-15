@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}SSH Terminal — ZivoPay{% endblock %}
+{% block page_title %}SSH Terminal{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- Connection panel -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-plug-fill me-2 text-success"></i>Connection</div>
+      <div class="card-body">
+
+        <div class="mb-3">
+          <label class="form-label">Quick select router</label>
+          <select class="form-select" id="quick-router" onchange="fillFromRouter()">
+            <option value="">— or pick a client —</option>
+            {% for c in clients %}
+            <option value="{{ c.host }}" data-name="{{ c.business_name or c.name }}">
+              {{ c.business_name or c.name }} ({{ c.host }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <hr style="border-color:#2d3748">
+
+        <div class="mb-2">
+          <label class="form-label">Host / IP</label>
+          <input id="ssh-host" class="form-control" placeholder="192.168.88.1">
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-5">
+            <label class="form-label">Port</label>
+            <input id="ssh-port" class="form-control" value="22">
+          </div>
+          <div class="col-7">
+            <label class="form-label">Username</label>
+            <input id="ssh-user" class="form-control" value="admin">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input id="ssh-pass" type="password" class="form-control">
+        </div>
+
+        <button class="btn btn-primary w-100" onclick="connectSSH()">
+          <i class="bi bi-terminal me-2"></i>Connect
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick commands -->
+    <div class="card mt-3">
+      <div class="card-header"><i class="bi bi-lightning me-2 text-warning"></i>Quick Commands</div>
+      <div class="card-body d-grid gap-1">
+        {% set cmds = [
+          ('/system resource print', 'System Info'),
+          ('/ip hotspot active print', 'Hotspot Sessions'),
+          ('/interface wifi print', 'WiFi Interfaces'),
+          ('/ip dhcp-server lease print count-only', 'DHCP Count'),
+          ('/interface wireguard print', 'WireGuard'),
+          ('/ip address print', 'IP Addresses'),
+          ('/ip route print', 'Routes'),
+          ('/log print', 'System Log'),
+        ] %}
+        {% for cmd, label in cmds %}
+        <button class="btn btn-sm btn-outline-secondary text-start"
+                onclick="runCmd('{{ cmd }}')">
+          <i class="bi bi-chevron-right me-1 text-muted"></i>{{ label }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Terminal output -->
+  <div class="col-lg-8">
+    <div class="card h-100" style="min-height: 600px">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-terminal-fill me-2"></i>Terminal
+          <span id="conn-badge" class="badge badge-offline ms-2" style="font-size:.65rem">disconnected</span>
+        </span>
+        <button class="btn btn-sm btn-outline-secondary" onclick="clearTerm()">Clear</button>
+      </div>
+      <div class="card-body p-0 d-flex flex-column" style="height:calc(100% - 45px)">
+        <div class="terminal flex-grow-1" id="term-output"
+             style="border-radius:0;min-height:400px;max-height:500px">
+          <span style="color:#6b7280">── not connected ──</span>
+        </div>
+        <!-- Input -->
+        <div class="p-2" style="background:#0d1117;border-top:1px solid #30363d;border-radius:0 0 12px 12px">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text" style="background:#161b22;border-color:#374151;color:#22c55e;font-family:monospace">
+              &gt;
+            </span>
+            <input id="cmd-input" class="form-control"
+                   style="background:#0d1117;border-color:#374151;color:#e2e8f0;font-family:monospace"
+                   placeholder="enter command…"
+                   onkeydown="if(event.key==='Enter') runCmd(this.value)">
+            <button class="btn btn-sm btn-outline-success" onclick="runCmd(document.getElementById('cmd-input').value)">
+              <i class="bi bi-send"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let connected = false;
+let connData  = {};
+
+function fillFromRouter() {
+  const sel = document.getElementById('quick-router');
+  if (!sel.value) return;
+  document.getElementById('ssh-host').value = sel.value;
+  document.getElementById('ssh-port').value = '22';
+  document.getElementById('ssh-user').value = 'admin';
+}
+
+function connectSSH() {
+  connData = {
+    host:     document.getElementById('ssh-host').value.trim(),
+    port:     document.getElementById('ssh-port').value.trim() || 22,
+    username: document.getElementById('ssh-user').value.trim(),
+    password: document.getElementById('ssh-pass').value,
+  };
+  if (!connData.host) { alert('Enter a host.'); return; }
+  appendTerm(`Connecting to ${connData.host}:${connData.port}…\n`);
+
+  // Test connection with a simple command
+  runCmd('/system identity print');
+  connected = true;
+  document.getElementById('conn-badge').textContent = `connected: ${connData.host}`;
+  document.getElementById('conn-badge').className   = 'badge badge-active ms-2';
+}
+
+function runCmd(cmd) {
+  if (!cmd || !cmd.trim()) return;
+  if (!connected || !connData.host) { alert('Connect first.'); return; }
+
+  document.getElementById('cmd-input').value = '';
+  appendTerm(`\n> ${cmd}\n`);
+
+  fetch('/api/ssh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...connData, command: cmd }),
+  })
+  .then(r => r.json())
+  .then(d => appendTerm(d.output || '(no output)\n'))
+  .catch(e => appendTerm(`Error: ${e}\n`));
+}
+
+function appendTerm(text) {
+  const t = document.getElementById('term-output');
+  if (t.querySelector('span')) t.innerHTML = '';
+  t.textContent += text;
+  t.scrollTop = t.scrollHeight;
+}
+
+function clearTerm() {
+  document.getElementById('term-output').innerHTML =
+    '<span style="color:#6b7280">── cleared ──</span>';
+}
+</script>
+{% endblock %}

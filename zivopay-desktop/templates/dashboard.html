@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — ZivoPay{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-sm btn-outline-secondary" onclick="refreshAll()">
+    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+  </button>
+  <a href="{{ url_for('onboard') }}" class="btn btn-sm btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>New Onboard
+  </a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="router-card text-center">
+      <div class="text-muted small mb-1">Total Clients</div>
+      <div class="fs-3 fw-bold">{{ clients|length }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="router-card text-center">
+      <div class="text-muted small mb-1">Active VPN</div>
+      <div class="fs-3 fw-bold text-success">
+        {{ clients|selectattr('status','equalto','active')|list|length }}
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="router-card text-center">
+      <div class="text-muted small mb-1">Online Now</div>
+      <div class="fs-3 fw-bold" id="online-count">—</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="router-card text-center">
+      <div class="text-muted small mb-1">Total Sessions</div>
+      <div class="fs-3 fw-bold" id="total-sessions">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- Router grid -->
+{% if clients %}
+<div class="row g-3">
+  {% for c in clients %}
+  <div class="col-md-6 col-xl-4">
+    <div class="router-card h-100">
+      <!-- Header -->
+      <div class="d-flex align-items-start justify-content-between mb-2">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="dot dot-gray" id="dot-{{ c.id }}"></span>
+            <span class="fw-bold">{{ c.business_name or c.name }}</span>
+          </div>
+          <div class="text-muted small">{{ c.location or '—' }}</div>
+        </div>
+        <div class="text-end">
+          {% if c.wg_ip %}
+          <span class="badge badge-wg px-2 py-1">{{ c.wg_ip }}</span>
+          {% endif %}
+          <br>
+          {% if c.status == 'active' %}
+            <span class="badge badge-active mt-1" style="font-size:.65rem">● active</span>
+          {% elif c.status == 'pending' %}
+            <span class="badge badge-pending mt-1" style="font-size:.65rem">⏳ pending</span>
+          {% else %}
+            <span class="badge badge-offline mt-1" style="font-size:.65rem">{{ c.status }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Live stats -->
+      <div class="small mb-2" id="stats-{{ c.id }}" style="min-height:38px">
+        {% if c.host %}
+        <div class="text-muted">
+          <div class="spinner-border spinner-border-sm me-1" style="width:.7rem;height:.7rem"></div>
+          Connecting…
+        </div>
+        {% else %}
+        <div class="text-muted" style="font-size:.75rem">No host configured</div>
+        {% endif %}
+      </div>
+
+      <!-- SSID -->
+      {% if c.ssid %}
+      <div class="mb-2">
+        <span class="badge bg-dark border text-muted" style="font-size:.72rem">
+          <i class="bi bi-wifi me-1"></i>{{ c.ssid }}
+        </span>
+        {% if c.ssid_5g %}
+        <span class="badge bg-dark border text-muted" style="font-size:.72rem">
+          <i class="bi bi-wifi me-1"></i>{{ c.ssid_5g }} (5G)
+        </span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Actions -->
+      <div class="d-flex gap-1 mt-2 flex-wrap">
+        <a href="{{ url_for('client_detail', client_id=c.id) }}"
+           class="btn btn-sm btn-outline-secondary flex-fill">
+          <i class="bi bi-eye me-1"></i>View
+        </a>
+        {% if c.host %}
+        <button class="btn btn-sm btn-outline-success flex-fill"
+                onclick="quickFix({{ c.id }}, '{{ c.business_name or c.name }}')">
+          <i class="bi bi-tools me-1"></i>Fix
+        </button>
+        <button class="btn btn-sm btn-outline-warning flex-fill"
+                onclick="restartHS({{ c.id }}, '{{ c.business_name or c.name }}')">
+          <i class="bi bi-arrow-repeat me-1"></i>HS
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-router fs-1 d-block mb-3 opacity-25"></i>
+  <div class="fw-semibold mb-2">No clients onboarded yet</div>
+  <a href="{{ url_for('onboard') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Onboard First Client
+  </a>
+</div>
+{% endif %}
+
+<!-- Quick fix result modal -->
+<div class="modal fade" id="fixModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="background:#161b22;border:1px solid #2d3748">
+      <div class="modal-header border-0">
+        <h6 class="modal-title fw-bold" id="fixModalTitle">Result</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="terminal rounded-0 rounded-bottom" id="fixModalOutput" style="min-height:180px">
+          ── waiting ──
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CLIENTS = {{ clients | map(attribute='id') | list | tojson }};
+const HAS_HOST = {{ clients | selectattr('host') | map(attribute='id') | list | tojson }};
+let totalSessions = 0;
+
+function loadStats(cid) {
+  fetch(`/api/stats/${cid}`)
+    .then(r => r.json())
+    .then(d => {
+      const dot   = document.getElementById(`dot-${cid}`);
+      const panel = document.getElementById(`stats-${cid}`);
+      if (d.success) {
+        dot.className = 'dot dot-green';
+        totalSessions += parseInt(d.sessions) || 0;
+        panel.innerHTML = `
+          <div class="d-flex gap-2 flex-wrap">
+            <span class="badge bg-dark border text-muted" style="font-size:.68rem">
+              <i class="bi bi-cpu me-1"></i>${d.cpu}
+            </span>
+            <span class="badge bg-dark border text-muted" style="font-size:.68rem">
+              <i class="bi bi-memory me-1"></i>${d.memory}
+            </span>
+            <span class="badge bg-success bg-opacity-25 text-success" style="font-size:.68rem">
+              <i class="bi bi-people me-1"></i>${d.sessions} sessions
+            </span>
+            <span class="badge bg-info bg-opacity-25 text-info" style="font-size:.68rem">
+              <i class="bi bi-wifi me-1"></i>${d.peers} wifi
+            </span>
+          </div>
+          <div class="text-muted mt-1" style="font-size:.68rem">
+            <i class="bi bi-clock me-1"></i>${d.uptime}
+          </div>`;
+        updateCounters();
+      } else {
+        dot.className = 'dot dot-red';
+        panel.innerHTML = `<span class="text-danger" style="font-size:.75rem">
+          <i class="bi bi-exclamation-triangle me-1"></i>${d.error || 'Unreachable'}
+        </span>`;
+      }
+    }).catch(() => {
+      document.getElementById(`dot-${cid}`).className = 'dot dot-red';
+    });
+}
+
+function updateCounters() {
+  const online = document.querySelectorAll('.dot-green').length;
+  document.getElementById('online-count').textContent = online;
+  document.getElementById('total-sessions').textContent = totalSessions;
+}
+
+function refreshAll() {
+  totalSessions = 0;
+  document.getElementById('online-count').textContent = '…';
+  document.getElementById('total-sessions').textContent = '…';
+  HAS_HOST.forEach(cid => loadStats(cid));
+}
+
+function postFix(cid, fixKey) {
+  return fetch(`/api/fix/${cid}/${fixKey}`, { method: 'POST' }).then(r => r.json());
+}
+
+function quickFix(cid, name) {
+  document.getElementById('fixModalTitle').textContent = `WiFi Fix — ${name}`;
+  document.getElementById('fixModalOutput').textContent = 'Applying fixes…';
+  new bootstrap.Modal(document.getElementById('fixModal')).show();
+  postFix(cid, 'wifi_fix').then(d => {
+    document.getElementById('fixModalOutput').textContent = d.output || d.error;
+    loadStats(cid);
+  });
+}
+
+function restartHS(cid, name) {
+  document.getElementById('fixModalTitle').textContent = `Restart Hotspot — ${name}`;
+  document.getElementById('fixModalOutput').textContent = 'Restarting…';
+  new bootstrap.Modal(document.getElementById('fixModal')).show();
+  postFix(cid, 'hotspot_restart').then(d => {
+    document.getElementById('fixModalOutput').textContent = d.output || d.error;
+  });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  HAS_HOST.forEach((cid, i) => setTimeout(() => loadStats(cid), i * 400));
+});
+</script>
+{% endblock %}

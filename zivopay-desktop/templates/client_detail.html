@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}{{ client.business_name or client.name }} — ZivoPay{% endblock %}
+{% block page_title %}{{ client.business_name or client.name }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('onboard_connect', client_id=client.id) }}" class="btn btn-sm btn-outline-primary">
+    <i class="bi bi-arrow-repeat me-1"></i>Re-push Config
+  </a>
+  <form method="post" action="{{ url_for('delete_client', client_id=client.id) }}"
+        onsubmit="return confirm('Delete {{ client.name }}?')">
+    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Delete</button>
+  </form>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- Info -->
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-person-fill me-2"></i>Client Info</div>
+      <div class="card-body">
+        {% if logo_url %}
+        <div class="text-center mb-3">
+          <img src="{{ logo_url }}" alt="logo" style="max-height:80px;object-fit:contain">
+        </div>
+        {% endif %}
+        <table class="table table-sm" style="color:#9ca3af;font-size:.83rem">
+          <tr><td>Name</td><td class="text-light">{{ client.name }}</td></tr>
+          <tr><td>Business</td><td class="text-light">{{ client.business_name or '—' }}</td></tr>
+          <tr><td>Location</td><td class="text-light">{{ client.location or '—' }}</td></tr>
+          <tr><td>Phone</td><td class="text-light">{{ client.phone or '—' }}</td></tr>
+          <tr><td>SSID</td><td class="text-light">{{ client.ssid or '—' }}</td></tr>
+          {% if client.ssid_5g %}
+          <tr><td>SSID 5G</td><td class="text-light">{{ client.ssid_5g }}</td></tr>
+          {% endif %}
+          <tr><td>WG IP</td><td><span class="badge-wg px-2 py-1">{{ client.wg_ip }}</span></td></tr>
+          <tr><td>Status</td>
+            <td>
+              {% if client.status == 'active' %}
+                <span class="badge badge-active">● active</span>
+              {% else %}
+                <span class="badge badge-pending">{{ client.status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr><td>Added</td><td class="text-muted">{{ client.created_at[:10] }}</td></tr>
+          <tr><td>By</td><td class="text-muted">{{ client.onboarded_by or '—' }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    {% if client.wg_public_key %}
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-shield-lock me-2 text-success"></i>WireGuard</div>
+      <div class="card-body">
+        <div class="form-label">Public Key</div>
+        <div class="terminal" style="min-height:auto;font-size:.72rem;word-break:break-all">
+          {{ client.wg_public_key }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick fixes -->
+    {% if client.host %}
+    <div class="card">
+      <div class="card-header"><i class="bi bi-tools me-2 text-warning"></i>Quick Actions</div>
+      <div class="card-body d-grid gap-2">
+        <button class="btn btn-sm btn-outline-success" onclick="fix('wifi_fix')">
+          <i class="bi bi-wifi me-1"></i>Fix WiFi
+        </button>
+        <button class="btn btn-sm btn-outline-warning" onclick="fix('hotspot_restart')">
+          <i class="bi bi-arrow-repeat me-1"></i>Restart Hotspot
+        </button>
+        <button class="btn btn-sm btn-outline-info" onclick="fix('dhcp_cleanup')">
+          <i class="bi bi-list-ul me-1"></i>Clean DHCP
+        </button>
+        <button class="btn btn-sm btn-outline-danger" onclick="fix('reboot')">
+          <i class="bi bi-power me-1"></i>Reboot
+        </button>
+      </div>
+      <div class="card-footer p-0">
+        <div class="terminal" id="fix-out" style="min-height:60px;font-size:.72rem;border-radius:0 0 12px 12px">
+          <span style="color:#6b7280">── output ──</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Live stats + logs -->
+  <div class="col-lg-8">
+    {% if client.host %}
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-activity me-2 text-success"></i>Live Stats</span>
+        <span class="dot dot-gray" id="stat-dot"></span>
+      </div>
+      <div class="card-body" id="stat-panel">
+        <div class="text-muted small">
+          <div class="spinner-border spinner-border-sm me-1" style="width:.8rem;height:.8rem"></div>
+          Loading…
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header"><i class="bi bi-clock-history me-2 text-secondary"></i>Activity Log</div>
+      <div class="card-body p-0">
+        {% if logs %}
+        <table class="table table-sm mb-0" style="font-size:.82rem">
+          <thead class="table-dark">
+            <tr><th>Action</th><th>Detail</th><th>By</th><th>Time</th></tr>
+          </thead>
+          <tbody>
+            {% for l in logs %}
+            <tr>
+              <td class="text-muted">{{ l.action }}</td>
+              <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                {{ l.detail or '—' }}
+              </td>
+              <td class="text-muted">{{ l.by_user }}</td>
+              <td class="text-muted">{{ l.created_at[:16] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-4 text-muted small">No activity yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if client.host %}
+function loadStats() {
+  fetch('/api/stats/{{ client.id }}')
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('stat-dot').className =
+        d.success ? 'dot dot-green' : 'dot dot-red';
+      if (d.success) {
+        document.getElementById('stat-panel').innerHTML = `
+          <div class="row g-3">
+            <div class="col-6 col-md-3 text-center">
+              <div class="text-muted small mb-1">CPU</div>
+              <div class="fw-bold">${d.cpu}</div>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+              <div class="text-muted small mb-1">Memory</div>
+              <div class="fw-bold">${d.memory}</div>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+              <div class="text-muted small mb-1">Sessions</div>
+              <div class="fw-bold text-success">${d.sessions}</div>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+              <div class="text-muted small mb-1">WiFi Peers</div>
+              <div class="fw-bold text-info">${d.peers}</div>
+            </div>
+            <div class="col-12 text-muted small">
+              <i class="bi bi-clock me-1"></i>Uptime: ${d.uptime}
+              &nbsp;·&nbsp; v${d.version}
+            </div>
+          </div>`;
+      } else {
+        document.getElementById('stat-panel').innerHTML =
+          `<span class="text-danger small"><i class="bi bi-x-circle me-1"></i>${d.error}</span>`;
+      }
+    });
+}
+
+function fix(key) {
+  document.getElementById('fix-out').textContent = 'Running…';
+  fetch('/api/fix/{{ client.id }}/' + key, { method: 'POST' })
+    .then(r => r.json())
+    .then(d => document.getElementById('fix-out').textContent = d.output || d.error);
+}
+
+loadStats();
+{% endif %}
+</script>
+{% endblock %}
