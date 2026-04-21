@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Bootstrap — {{ client.business_name or client.name }}{% endblock %}
+
+{% block content %}
+
+<!-- Steps -->
+<div class="d-flex align-items-center gap-2 mb-4">
+  <span class="step-badge step-done"><i class="bi bi-check-lg" style="font-size:.7rem"></i></span>
+  <span class="small text-muted">Client Details</span>
+  <div class="flex-grow-1 border-bottom border-secondary mx-2"></div>
+  <span class="step-badge step-active">2</span>
+  <span class="small fw-semibold">Bootstrap Script</span>
+  <div class="flex-grow-1 border-bottom border-secondary mx-2"></div>
+  <span class="step-badge step-pending">3</span>
+  <span class="small text-muted">Register Key</span>
+</div>
+
+<!-- Client info pill -->
+<div class="d-flex flex-wrap gap-2 mb-3 small">
+  <span class="stat-pill"><i class="bi bi-person me-1 text-muted"></i>{{ client.business_name or client.name }}</span>
+  <span class="stat-pill"><i class="bi bi-wifi me-1 text-muted"></i>{{ client.ssid }}</span>
+  <span class="stat-pill badge-wg">{{ client.wg_ip }}</span>
+  {% if client.location %}
+  <span class="stat-pill"><i class="bi bi-geo-alt me-1 text-muted"></i>{{ client.location }}</span>
+  {% endif %}
+</div>
+
+<!-- Script card -->
+<div class="card mb-3">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <span><i class="bi bi-file-code-fill me-2 text-gold"></i>RouterOS Bootstrap Script</span>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('download', client_id=client.id) }}"
+         class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-download me-1"></i>Download .rsc
+      </a>
+      <button class="btn btn-sm btn-outline-primary" onclick="copyScript()">
+        <i class="bi bi-clipboard me-1"></i><span id="copy-label">Copy</span>
+      </button>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <pre class="script-box m-0 rounded-bottom" id="script-content">{{ script }}</pre>
+  </div>
+</div>
+
+<!-- Instructions -->
+<div class="card mb-4" style="border-color:#1e3a5f">
+  <div class="card-body py-3 px-3">
+    <div class="fw-semibold mb-2 small" style="color:#60a5fa">
+      <i class="bi bi-info-circle-fill me-1"></i>Instructions
+    </div>
+    <ol class="small text-muted mb-0" style="padding-left:1.2rem;line-height:1.9">
+      <li>Open MikroTik terminal (Winbox → New Terminal, or SSH)</li>
+      <li>Copy the script above and paste it in the terminal</li>
+      <li>Press <kbd class="bg-dark border-secondary text-light px-1 rounded">Enter</kbd></li>
+      <li>At the end, the router will print its <strong class="text-light">WireGuard public key</strong></li>
+      <li>Copy that key and paste it below</li>
+    </ol>
+  </div>
+</div>
+
+<!-- Register peer form -->
+<div class="card" style="border-color:#1a6b3c">
+  <div class="card-header" style="border-color:#1a6b3c">
+    <i class="bi bi-shield-lock-fill me-2" style="color:var(--gold)"></i>Register WireGuard Peer
+  </div>
+  <div class="card-body px-4 py-4">
+    <form method="POST" action="{{ url_for('register_peer', client_id=client.id) }}">
+      <div class="mb-3">
+        <label class="form-label">WireGuard Public Key from MikroTik</label>
+        <input name="wg_public_key" class="form-control"
+               style="font-family:monospace;font-size:.82rem"
+               placeholder="e.g. L0qgnwsafP/ARb1/uTB6u/n9BJ5+dMSwodqhXLUGXXM="
+               required autocomplete="off">
+        <div class="form-text text-muted" style="font-size:.72rem">
+          The key printed by the MikroTik at the end of the script
+        </div>
+      </div>
+      <div class="d-grid">
+        <button type="submit" class="btn btn-primary fw-bold">
+          <i class="bi bi-shield-check me-2"></i>Register Peer &amp; Complete Onboarding
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyScript() {
+  const text = document.getElementById('script-content').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const lbl = document.getElementById('copy-label');
+    lbl.textContent = 'Copied!';
+    setTimeout(() => lbl.textContent = 'Copy', 2000);
+  });
+}
+</script>
+{% endblock %}

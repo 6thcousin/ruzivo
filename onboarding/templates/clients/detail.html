@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+{% block title %}{{ client.name }} — Client{% endblock %}
+{% block page_title %}{{ client.name }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('clients.edit', client_id=client.id) }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-pencil me-1"></i>Edit
+  </a>
+  <a href="{{ url_for('onboard.wizard') }}" class="btn btn-sm btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Add Router
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-person me-2"></i>Client Info</div>
+      <div class="card-body small">
+        <table class="table table-sm table-borderless mb-0">
+          <tr><td class="text-muted">Business</td><td>{{ client.business_name or '—' }}</td></tr>
+          <tr><td class="text-muted">Phone</td><td>{{ client.phone or '—' }}</td></tr>
+          <tr><td class="text-muted">Email</td><td>{{ client.email or '—' }}</td></tr>
+          <tr><td class="text-muted">Location</td><td>{{ client.location or '—' }}</td></tr>
+          <tr><td class="text-muted">Added</td><td>{{ client.created_at.strftime('%b %d, %Y') }}</td></tr>
+          {% if client.notes %}
+          <tr><td class="text-muted">Notes</td><td>{{ client.notes }}</td></tr>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+    <div class="card border-danger border-opacity-25">
+      <div class="card-header text-danger small"><i class="bi bi-exclamation-triangle me-1"></i>Danger Zone</div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('clients.delete', client_id=client.id) }}"
+              onsubmit="return confirm('Delete {{ client.name }} and ALL their routers?')">
+          <button class="btn btn-outline-danger btn-sm w-100">
+            <i class="bi bi-trash me-1"></i>Delete Client
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-router me-2"></i>Routers ({{ client.routers|length }})</span>
+        <a href="{{ url_for('routers.add', client_id=client.id) }}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-plus-lg me-1"></i>Add Router
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if client.routers %}
+        <div class="list-group list-group-flush rounded-bottom-3">
+          {% for r in client.routers %}
+          <a href="{{ url_for('routers.detail', router_id=r.id) }}"
+             class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 px-4">
+            <span class="dot dot-gray" id="dot-{{ r.id }}"></span>
+            <div class="flex-grow-1">
+              <div class="fw-semibold">{{ r.name }}</div>
+              <div class="text-muted small font-monospace">{{ r.host }}</div>
+            </div>
+            <div>
+              <span class="badge badge-{{ 'wg' if r.connection_type == 'wireguard' else 'local' }}">
+                {{ 'WG' if r.connection_type == 'wireguard' else 'Local' }}
+              </span>
+              {% if r.ssid %}
+              <div class="text-muted small mt-1"><i class="bi bi-wifi me-1"></i>{{ r.ssid }}</div>
+              {% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">No routers yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

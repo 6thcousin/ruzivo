@@ -26,3 +26,6 @@ env/
 # Logs
 *.log
 logs/
+onboarding/data/
+onboarding/venv/
+zivopay-desktop/data/

@@ -1,0 +1,298 @@
+{% extends "layout.html" %}
+{% block title %}{{ router.name }} — Router{% endblock %}
+{% block page_title %}
+  <span class="dot dot-gray me-2" id="status-dot"></span>{{ router.name }}
+{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('client_detail', client_id=router.client_id) }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ router.client.name }}
+  </a>
+  <a href="{{ url_for('edit_router', router_id=router.id) }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-pencil"></i>
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- Left: info + stats -->
+  <div class="col-lg-4">
+
+    <!-- Connection info -->
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-info-circle me-2"></i>Connection</div>
+      <div class="card-body small">
+        <table class="table table-sm table-borderless mb-0">
+          <tr><td class="text-muted">Host</td><td class="font-monospace fw-semibold">{{ router.host }}</td></tr>
+          <tr><td class="text-muted">Port</td><td>{{ router.port }}</td></tr>
+          <tr><td class="text-muted">Username</td><td>{{ router.username }}</td></tr>
+          <tr><td class="text-muted">Type</td>
+            <td><span class="badge badge-{{ 'wg' if router.connection_type == 'wireguard' else 'local' }}">
+              {{ 'WireGuard' if router.connection_type == 'wireguard' else 'Local' }}
+            </span></td>
+          </tr>
+          {% if router.wg_ip %}
+          <tr><td class="text-muted">WG IP</td><td class="font-monospace">{{ router.wg_ip }}</td></tr>
+          {% endif %}
+          {% if router.ssid %}
+          <tr><td class="text-muted">SSID</td><td><i class="bi bi-wifi me-1"></i>{{ router.ssid }}</td></tr>
+          {% endif %}
+          {% if router.notes %}
+          <tr><td class="text-muted">Notes</td><td>{{ router.notes }}</td></tr>
+          {% endif %}
+        </table>
+        <button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="testConn()">
+          <i class="bi bi-plug me-1"></i>Test Connection
+        </button>
+        <div id="test-result" class="mt-2 small"></div>
+      </div>
+    </div>
+
+    <!-- Live stats -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-activity me-2 text-success"></i>Live Stats</span>
+        <button class="btn btn-sm btn-outline-secondary p-1 px-2" onclick="loadStats()" title="Refresh">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+      <div class="card-body" id="stats-body">
+        <div class="text-center text-muted py-3 small">
+          <div class="spinner-border spinner-border-sm me-1" role="status"></div>
+          Loading…
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="card border-danger border-opacity-25">
+      <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Danger Zone</div>
+      <div class="card-body">
+        <button class="btn btn-outline-danger btn-sm w-100"
+                onclick="if(confirm('Reboot {{ router.name }}?')) runCmd('reboot', 'Reboot Router')">
+          <i class="bi bi-power me-1"></i>Reboot Router
+        </button>
+        <a href="{{ url_for('delete_router', router_id=router.id) }}"
+           class="btn btn-outline-danger btn-sm w-100 mt-2"
+           onclick="return confirm('Delete router {{ router.name }}? This cannot be undone.')">
+          <i class="bi bi-trash me-1"></i>Delete Router
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right: terminal + commands -->
+  <div class="col-lg-8">
+
+    <!-- Command buttons -->
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-terminal me-2"></i>Commands</div>
+      <div class="card-body pb-2">
+        <div class="row g-2 mb-3">
+          {% for key, (label, icon) in commands.items() %}
+          {% if key != 'reboot' %}
+          <div class="col-6 col-sm-4 col-md-3">
+            <button class="btn btn-outline-secondary cmd-btn w-100 {% if key == 'apply_wifi_fixes' %}text-success border-success{% endif %}"
+                    onclick="runCmd('{{ key }}', '{{ label }}')">
+              <i class="{{ icon }} me-1"></i>{{ label }}
+            </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+
+        <!-- Custom command -->
+        <div class="input-group">
+          <span class="input-group-text font-monospace text-muted small">$</span>
+          <input type="text" id="raw-cmd" class="form-control font-monospace"
+                 placeholder="/ip/address  or  /system/resource  etc."
+                 onkeydown="if(event.key==='Enter') runRaw()">
+          <button class="btn btn-outline-primary" onclick="runRaw()">Run</button>
+        </div>
+        <div class="text-muted" style="font-size:.72rem;margin-top:.3rem">
+          RouterOS API path (e.g. <code>/ip/hotspot/active</code> &nbsp;·&nbsp;
+          <code>/interface/wifi</code> &nbsp;·&nbsp; <code>/system/resource</code>)
+        </div>
+      </div>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-display-fill me-2"></i>Output</span>
+        <span id="cmd-label" class="text-muted small font-monospace"></span>
+        <button class="btn btn-sm btn-outline-secondary p-1 px-2" onclick="clearTerminal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="terminal" id="terminal">
+<span class="dim">── ready. choose a command or type a path above. ──</span>
+      </div>
+    </div>
+
+    <!-- Command history -->
+    {% if logs %}
+    <div class="card">
+      <div class="card-header"><i class="bi bi-clock-history me-2 text-muted"></i>Command History</div>
+      <div class="card-body p-0">
+        <div style="max-height:260px;overflow-y:auto">
+          <table class="table table-sm table-hover mb-0 small">
+            <thead class="table-light sticky-top">
+              <tr><th>Command</th><th>Status</th><th>Time</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for log in logs %}
+              <tr>
+                <td class="font-monospace">{{ log.command[:50] }}{% if log.command|length > 50 %}…{% endif %}</td>
+                <td>
+                  <span class="badge {{ 'bg-success' if log.status == 'success' else 'bg-danger' }} bg-opacity-75">
+                    {{ log.status }}
+                  </span>
+                </td>
+                <td class="text-muted">{{ log.executed_at.strftime('%b %d %H:%M') }}</td>
+                <td>
+                  <button class="btn btn-sm py-0 btn-link text-muted"
+                          onclick="showHistoryOutput(this)"
+                          data-output="{{ log.output | e }}">view</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ROUTER_ID = {{ router.id }};
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+
+function loadStats() {
+  fetch(`/api/routers/${ROUTER_ID}/stats`)
+    .then(r => r.json())
+    .then(d => {
+      const dot = document.getElementById('status-dot');
+      if (d.success) {
+        dot.className = 'dot dot-green me-2';
+        document.getElementById('stats-body').innerHTML = `
+          <div class="row g-2 text-center">
+            <div class="col-6">
+              <div class="p-2 rounded bg-light">
+                <div class="text-muted" style="font-size:.7rem">CPU</div>
+                <div class="fw-bold">${d.cpu_load}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-2 rounded bg-light">
+                <div class="text-muted" style="font-size:.7rem">Memory</div>
+                <div class="fw-bold">${d.memory}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-2 rounded bg-light">
+                <div class="text-muted" style="font-size:.7rem">Sessions</div>
+                <div class="fw-bold text-success">${d.sessions}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-2 rounded bg-light">
+                <div class="text-muted" style="font-size:.7rem">WiFi Clients</div>
+                <div class="fw-bold text-info">${d.wifi_peers}</div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-2 text-muted small">
+            <i class="bi bi-clock me-1"></i>${d.uptime}
+            <span class="ms-2 font-monospace">${d.identity}</span>
+          </div>`;
+      } else {
+        dot.className = 'dot dot-red me-2';
+        document.getElementById('stats-body').innerHTML =
+          `<div class="text-danger small"><i class="bi bi-exclamation-triangle me-1"></i>${d.error}</div>`;
+      }
+    })
+    .catch(e => {
+      document.getElementById('stats-body').innerHTML =
+        `<div class="text-danger small">Error: ${e}</div>`;
+    });
+}
+
+// ── Test connection ────────────────────────────────────────────────────────
+
+function testConn() {
+  const el = document.getElementById('test-result');
+  el.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Testing…</span>';
+  fetch(`/api/routers/${ROUTER_ID}/test`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        el.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>
+          Connected — <b>${d.identity}</b> (${d.board}, v${d.version})</span>`;
+        document.getElementById('status-dot').className = 'dot dot-green me-2';
+      } else {
+        el.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${d.error}</span>`;
+        document.getElementById('status-dot').className = 'dot dot-red me-2';
+      }
+    });
+}
+
+// ── Commands ───────────────────────────────────────────────────────────────
+
+function writeTerminal(text, isError) {
+  const t = document.getElementById('terminal');
+  t.textContent = text;
+  t.className = 'terminal' + (isError ? ' err-line' : '');
+  t.scrollTop = 0;
+}
+
+function clearTerminal() {
+  document.getElementById('terminal').textContent = '── cleared ──';
+  document.getElementById('cmd-label').textContent = '';
+}
+
+function setLoading(label) {
+  document.getElementById('terminal').innerHTML =
+    '<span class="dim"><span class="spinner-border spinner-border-sm me-1"></span>Running: ' + label + '…</span>';
+  document.getElementById('cmd-label').textContent = label;
+}
+
+function runCmd(cmdKey, label) {
+  setLoading(label);
+  const fd = new FormData();
+  fd.append('cmd_key', cmdKey);
+  fetch(`/api/routers/${ROUTER_ID}/command`, { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => writeTerminal(d.output || d.error || '(no output)', !d.success))
+    .catch(e => writeTerminal('Fetch error: ' + e, true));
+}
+
+function runRaw() {
+  const cmd = document.getElementById('raw-cmd').value.trim();
+  if (!cmd) return;
+  setLoading(cmd);
+  const fd = new FormData();
+  fd.append('raw_cmd', cmd);
+  fetch(`/api/routers/${ROUTER_ID}/command`, { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => writeTerminal(d.output || d.error || '(no output)', !d.success))
+    .catch(e => writeTerminal('Fetch error: ' + e, true));
+}
+
+function showHistoryOutput(btn) {
+  writeTerminal(btn.dataset.output, false);
+  document.getElementById('cmd-label').textContent = '(history)';
+}
+
+// Auto-load on page open
+loadStats();
+setInterval(loadStats, 30000);
+</script>
+{% endblock %}

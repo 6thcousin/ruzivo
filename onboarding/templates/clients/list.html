@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block title %}Clients — ZivoPay{% endblock %}
+{% block page_title %}Clients{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('clients.add') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Add Client
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-people me-2"></i>All Clients ({{ clients|length }})</span>
+    <form class="d-flex gap-2" method="GET">
+      <input name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Search…" style="width:200px">
+      <button class="btn btn-sm btn-outline-secondary">Search</button>
+      {% if q %}<a href="{{ url_for('clients.list_clients') }}" class="btn btn-sm btn-outline-secondary">Clear</a>{% endif %}
+    </form>
+  </div>
+  <div class="card-body p-0">
+    {% if clients %}
+    <div class="list-group list-group-flush rounded-bottom-3">
+      {% for c in clients %}
+      <a href="{{ url_for('clients.detail', client_id=c.id) }}"
+         class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 px-4">
+        <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold"
+             style="width:40px;height:40px;flex-shrink:0">{{ c.name[0].upper() }}</div>
+        <div class="flex-grow-1">
+          <div class="fw-semibold">{{ c.name }}</div>
+          <div class="text-muted small">{{ c.business_name or c.location or '—' }}</div>
+        </div>
+        <div class="text-end">
+          <span class="badge bg-secondary-subtle text-secondary">{{ c.routers|length }} router{{ 's' if c.routers|length != 1 }}</span>
+          <div class="text-muted small mt-1">{{ c.created_at.strftime('%b %d, %Y') }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-people fs-2 d-block mb-2"></i>
+      No clients found. <a href="{{ url_for('clients.add') }}">Add one.</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

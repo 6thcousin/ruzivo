@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Settings — ZivoPay{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <div class="col-lg-7">
+    <form method="POST">
+      <!-- VPS Connection -->
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-cloud-fill me-2 text-info"></i>VPS Connection</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-sm-8">
+              <label class="form-label">VPS Host / IP</label>
+              <input name="vps_host" class="form-control" value="{{ s.vps_host }}"
+                     placeholder="164.90.160.138">
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label">SSH Port</label>
+              <input name="vps_ssh_port" class="form-control" value="22">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">SSH Username</label>
+              <input name="vps_user" class="form-control" value="{{ s.vps_user }}"
+                     placeholder="root">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">SSH Password</label>
+              <input name="vps_pass" type="password" class="form-control"
+                     placeholder="{% if s.vps_pass %}••••••••{% else %}not set{% endif %}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WireGuard -->
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-shield-lock-fill me-2 text-success"></i>WireGuard</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">VPS WireGuard Public Key</label>
+            <input name="vps_wg_pubkey" class="form-control"
+                   style="font-family:monospace;font-size:.82rem"
+                   value="{{ s.vps_wg_pubkey }}"
+                   placeholder="base64 public key from VPS">
+          </div>
+          <div class="row g-3">
+            <div class="col-sm-4">
+              <label class="form-label">WG Listen Port</label>
+              <input name="vps_wg_port" class="form-control" value="{{ s.vps_wg_port }}">
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label">VPS WG IP</label>
+              <input name="vps_wg_ip" class="form-control" value="{{ s.vps_wg_ip }}">
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label">WG Interface</label>
+              <input name="wg_interface" class="form-control" value="{{ s.wg_interface }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label">wg0.conf Path on VPS</label>
+              <input name="wg_conf" class="form-control" value="{{ s.wg_conf }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- App -->
+      <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-gear-fill me-2"></i>App</div>
+        <div class="card-body">
+          <label class="form-label">App Name</label>
+          <input name="app_name" class="form-control" value="{{ s.app_name }}">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 fw-bold">
+        <i class="bi bi-check-circle me-2"></i>Save Settings
+      </button>
+    </form>
+  </div>
+
+  <!-- Test + info -->
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-activity me-2 text-success"></i>VPS Status</div>
+      <div class="card-body">
+        <button class="btn btn-outline-success w-100 mb-3" onclick="testVPS()">
+          <i class="bi bi-plug me-2"></i>Test VPS Connection
+        </button>
+        <div class="terminal" id="vps-output" style="min-height:100px">
+          <span style="color:#6b7280">── click test ──</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-shield-lock me-2 text-success"></i>WireGuard Peers</div>
+      <div class="card-body">
+        <button class="btn btn-outline-info w-100 mb-3" onclick="listPeers()">
+          <i class="bi bi-list-ul me-2"></i>List Active Peers
+        </button>
+        <div class="terminal" id="wg-output" style="min-height:100px">
+          <span style="color:#6b7280">── click list ──</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><i class="bi bi-info-circle me-2"></i>Get VPS WG Public Key</div>
+      <div class="card-body">
+        <p class="text-muted small mb-2">Run this on your VPS to get the public key:</p>
+        <div class="terminal" style="min-height:auto">wg show wg0 public-key</div>
+        <p class="text-muted small mt-2 mb-0">Or if using MikroTik CHR hub:</p>
+        <div class="terminal mt-1" style="min-height:auto">/interface wireguard print</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function testVPS() {
+  document.getElementById('vps-output').textContent = 'Testing…';
+  fetch('/api/ssh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      host: '{{ s.vps_host }}', port: 22,
+      username: '{{ s.vps_user }}', password: '',
+      command: 'echo "VPS OK" && uptime'
+    })
+  }).then(r => r.json())
+    .then(d => document.getElementById('vps-output').textContent = d.output || d.error)
+    .catch(e => document.getElementById('vps-output').textContent = `Error: ${e}`);
+}
+
+function listPeers() {
+  document.getElementById('wg-output').textContent = 'Fetching…';
+  fetch('/api/wg/peers')
+    .then(r => r.json())
+    .then(d => document.getElementById('wg-output').textContent = d.output || d.error)
+    .catch(e => document.getElementById('wg-output').textContent = `Error: ${e}`);
+}
+</script>
+{% endblock %}

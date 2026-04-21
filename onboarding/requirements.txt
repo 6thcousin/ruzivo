@@ -1,0 +1,4 @@
+flask>=3.0
+flask-sqlalchemy>=3.1
+routeros-api>=0.17
+gunicorn>=21.2

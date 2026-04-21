@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Login — ZivoPay AutoConfig{% endblock %}
+
+{% block fullpage %}
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #0a0d14; }
+
+  .login-page {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Full screen logo */
+  .login-page::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("{{ url_for('static', filename='logo.png') }}") center/cover no-repeat;
+    opacity: .07;
+    filter: blur(3px) saturate(0);
+  }
+
+  /* Dark overlay so form is readable */
+  .login-page::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(8, 10, 18, 0.72);
+  }
+
+  /* Glass form */
+  .login-box {
+    position: relative; z-index: 2;
+    width: 100%; max-width: 360px;
+    margin: 1rem;
+    padding: 2.4rem 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 20px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 12px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(212,160,23,.1);
+    color: #fff;
+  }
+
+  .login-logo {
+    display: block; margin: 0 auto 1rem;
+    height: 60px; object-fit: contain;
+    filter: drop-shadow(0 0 14px rgba(212,160,23,.5));
+  }
+
+  .login-title {
+    text-align: center;
+    font-size: 1.1rem; font-weight: 700; letter-spacing: .04em;
+    margin-bottom: .2rem;
+  }
+
+  .login-sub {
+    text-align: center;
+    font-size: .75rem; color: rgba(255,255,255,.38);
+    margin-bottom: 1.8rem;
+    text-transform: uppercase; letter-spacing: .08em;
+  }
+
+  .glass-label {
+    display: block;
+    font-size: .72rem; font-weight: 700;
+    color: rgba(255,255,255,.45);
+    margin-bottom: .3rem; letter-spacing: .06em; text-transform: uppercase;
+  }
+
+  .glass-input {
+    width: 100%; padding: .65rem .9rem;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 10px; color: #fff; font-size: .92rem;
+    outline: none; transition: border .2s, background .2s;
+    margin-bottom: 1rem;
+  }
+  .glass-input::placeholder { color: rgba(255,255,255,.22); }
+  .glass-input:focus {
+    background: rgba(255,255,255,.11);
+    border-color: rgba(212,160,23,.6);
+    box-shadow: 0 0 0 3px rgba(212,160,23,.13);
+  }
+
+  .glass-btn {
+    width: 100%; padding: .75rem;
+    border-radius: 10px; font-weight: 700; font-size: .95rem;
+    background: rgba(212,160,23,.16);
+    border: 1px solid rgba(212,160,23,.5);
+    color: #f5d06a;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    transition: background .2s, box-shadow .2s;
+    letter-spacing: .04em;
+    margin-top: .5rem;
+  }
+  .glass-btn:hover {
+    background: rgba(212,160,23,.28);
+    box-shadow: 0 0 22px rgba(212,160,23,.28);
+  }
+
+  .glass-error {
+    background: rgba(239,68,68,.13);
+    border: 1px solid rgba(239,68,68,.28);
+    border-radius: 8px; padding: .5rem .8rem;
+    font-size: .82rem; color: #fca5a5;
+    margin-bottom: 1rem;
+  }
+</style>
+
+<div class="login-page">
+  <div class="login-box">
+    <img class="login-logo"
+         src="{{ url_for('static', filename='logo.png') }}" alt="ZivoPay">
+    <div class="login-title">ZivoPay AutoConfig</div>
+    <div class="login-sub">Technician Portal</div>
+
+    {% if error %}
+    <div class="glass-error"><i class="bi bi-x-circle me-1"></i>{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <label class="glass-label">Username</label>
+      <input name="username" class="glass-input" placeholder="admin" autocomplete="username">
+
+      <label class="glass-label">Password</label>
+      <input name="password" type="password" class="glass-input" autocomplete="current-password">
+
+      <button class="glass-btn">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+      </button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+{% endblock %}

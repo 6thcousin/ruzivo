@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}New Client — ZivoPay AutoConfig{% endblock %}
+
+{% block content %}
+
+<!-- Steps -->
+<div class="d-flex align-items-center gap-2 mb-4">
+  <span class="step-badge step-active">1</span>
+  <span class="small fw-semibold">Client Details</span>
+  <div class="flex-grow-1 border-bottom border-secondary mx-2"></div>
+  <span class="step-badge step-pending">2</span>
+  <span class="small text-muted">Bootstrap</span>
+  <div class="flex-grow-1 border-bottom border-secondary mx-2"></div>
+  <span class="step-badge step-pending">3</span>
+  <span class="small text-muted">Register Key</span>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-person-plus-fill me-2 text-gold"></i>New Client
+  </div>
+  <div class="card-body px-4 py-4">
+    <form method="POST" action="{{ url_for('new_client') }}">
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label">Contact Name <span class="text-danger">*</span></label>
+          <input name="name" class="form-control" required
+                 placeholder="e.g. Tendai Moyo"
+                 value="{{ v.name if v else '' }}">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Business / Site Name</label>
+          <input name="business_name" class="form-control"
+                 placeholder="e.g. Viper Connect"
+                 value="{{ v.business_name if v else '' }}">
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label">Location</label>
+          <input name="location" class="form-control"
+                 placeholder="e.g. Shamva"
+                 value="{{ v.location if v else '' }}">
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label">Phone</label>
+          <input name="phone" type="tel" class="form-control"
+                 placeholder="e.g. 0771234567"
+                 value="{{ v.phone if v else '' }}">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">WiFi SSID <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text bg-dark border-secondary text-muted">
+              <i class="bi bi-wifi"></i>
+            </span>
+            <input name="ssid" class="form-control" required
+                   placeholder="e.g. Viper Connect"
+                   value="{{ v.ssid if v else '' }}">
+          </div>
+          <div class="form-text text-muted" style="font-size:.72rem">
+            Exactly as clients will see it
+          </div>
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label">Router Admin Password</label>
+          <input name="router_pass" class="form-control"
+                 placeholder="558920"
+                 value="{{ v.router_pass if v else '558920' }}">
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label">WireGuard IP <span class="text-muted small">(auto)</span></label>
+          <input class="form-control" value="{{ wg_ip }}" disabled
+                 style="font-family:monospace;color:#60a5fa">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Notes</label>
+          <textarea name="notes" class="form-control" rows="2"
+                    placeholder="e.g. Cudy AP on ether2, 2-storey building">{{ v.notes if v else '' }}</textarea>
+        </div>
+      </div>
+
+      <div class="d-grid mt-4">
+        <button type="submit" class="btn btn-primary btn-lg fw-bold">
+          <i class="bi bi-arrow-right-circle-fill me-2"></i>Generate Bootstrap Script
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

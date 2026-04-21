@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-person-circle me-2 text-primary"></i>{{ title }}
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+              <input class="form-control" name="name" required
+                     value="{{ client.name if client else '' }}">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold">Business Name</label>
+              <input class="form-control" name="business_name"
+                     value="{{ client.business_name if client else '' }}">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold">Phone</label>
+              <input class="form-control" name="phone" type="tel"
+                     value="{{ client.phone if client else '' }}">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold">Email</label>
+              <input class="form-control" name="email" type="email"
+                     value="{{ client.email if client else '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Location / Address</label>
+              <input class="form-control" name="location"
+                     value="{{ client.location if client else '' }}"
+                     placeholder="e.g. Harare, Zimbabwe">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Notes</label>
+              <textarea class="form-control" name="notes" rows="3">{{ client.notes if client else '' }}</textarea>
+            </div>
+          </div>
+          <hr class="my-3">
+          <div class="d-flex gap-2 justify-content-end">
+            <a href="{{ url_for('clients') }}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-1"></i>{{ 'Save Changes' if client else 'Add Client' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

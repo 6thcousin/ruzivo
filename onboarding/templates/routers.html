@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block title %}All Routers{% endblock %}
+{% block page_title %}All Routers{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between">
+    <span><i class="bi bi-router me-2 text-primary"></i>{{ routers|length }} Router{{ 's' if routers|length != 1 }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if routers %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Status</th><th>Name</th><th>Client</th>
+            <th>Host</th><th>SSID</th><th>Type</th><th>Added</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in routers %}
+          <tr>
+            <td><span class="dot dot-gray" id="dot-{{ r.id }}"></span></td>
+            <td>
+              <a href="{{ url_for('router_detail', router_id=r.id) }}" class="fw-semibold text-decoration-none">
+                {{ r.name }}
+              </a>
+            </td>
+            <td>
+              <a href="{{ url_for('client_detail', client_id=r.client_id) }}" class="text-muted small text-decoration-none">
+                {{ r.client.name }}
+              </a>
+            </td>
+            <td class="font-monospace small">{{ r.host }}</td>
+            <td class="small">{{ r.ssid or '—' }}</td>
+            <td>
+              <span class="badge badge-{{ 'wg' if r.connection_type == 'wireguard' else 'local' }}">
+                {{ 'WireGuard' if r.connection_type == 'wireguard' else 'Local' }}
+              </span>
+            </td>
+            <td class="text-muted small">{{ r.created_at.strftime('%b %d, %Y') }}</td>
+            <td>
+              <a href="{{ url_for('router_detail', router_id=r.id) }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-terminal me-1"></i>Manage
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-router fs-1 d-block mb-3 opacity-25"></i>
+      No routers yet.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Async status check all routers
+const ids = [{% for r in routers %}{{ r.id }},{% endfor %}];
+ids.forEach(id => {
+  fetch(`/api/routers/${id}/test`)
+    .then(r => r.json())
+    .then(d => {
+      const dot = document.getElementById('dot-' + id);
+      if (dot) dot.className = 'dot ' + (d.success ? 'dot-green' : 'dot-red');
+    }).catch(() => {});
+});
+</script>
+{% endblock %}

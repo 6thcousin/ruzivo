@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Quick Fix — ZivoPay{% endblock %}
+{% block page_title %}Quick Fix Tools{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- Fix buttons -->
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-tools me-2 text-warning"></i>Select Router</div>
+      <div class="card-body">
+        <select class="form-select mb-3" id="router-select" onchange="selectRouter()">
+          <option value="">— Select router —</option>
+          {% for c in clients %}
+          <option value="{{ c.id }}" data-name="{{ c.business_name or c.name }}">
+            {{ c.business_name or c.name }} ({{ c.host }})
+          </option>
+          {% endfor %}
+        </select>
+        <div id="selected-router" class="text-muted small mb-3" style="display:none">
+          <i class="bi bi-router me-1"></i><span id="selected-name"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><i class="bi bi-lightning-fill me-2 text-warning"></i>Fix Actions</div>
+      <div class="card-body d-grid gap-2">
+
+        <button class="btn btn-outline-success" onclick="runFix('wifi_fix')">
+          <i class="bi bi-wifi me-2"></i>Fix WiFi Issues
+          <div class="small text-muted fw-normal">Country, reject rules, channels</div>
+        </button>
+
+        <button class="btn btn-outline-primary" onclick="runFix('bridge_fix')">
+          <i class="bi bi-diagram-3 me-2"></i>Fix Bridge
+          <div class="small text-muted fw-normal">protocol-mode=none, fast-forward=no</div>
+        </button>
+
+        <button class="btn btn-outline-info" onclick="runFix('dhcp_cleanup')">
+          <i class="bi bi-list-ul me-2"></i>Clean DHCP Leases
+          <div class="small text-muted fw-normal">Remove expired/abandoned leases</div>
+        </button>
+
+        <button class="btn btn-outline-warning" onclick="runFix('hotspot_restart')">
+          <i class="bi bi-arrow-repeat me-2"></i>Restart Hotspot
+          <div class="small text-muted fw-normal">Disable then re-enable hotspot</div>
+        </button>
+
+        <button class="btn btn-outline-secondary" onclick="runFix('clear_bindings')">
+          <i class="bi bi-shield-x me-2"></i>Clear Blocked Bindings
+          <div class="small text-muted fw-normal">Remove all blocked IP bindings</div>
+        </button>
+
+        <button class="btn btn-outline-danger" onclick="runFix('reboot')">
+          <i class="bi bi-power me-2"></i>Reboot Router
+          <div class="small text-muted fw-normal">Send reboot command</div>
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-terminal me-2"></i>Output</span>
+        <button class="btn btn-sm btn-outline-secondary" onclick="clearLog()">Clear</button>
+      </div>
+      <div class="card-body p-0">
+        <div class="terminal" id="fix-output" style="min-height:480px;border-radius:0 0 12px 12px">
+          <span style="color:#6b7280">── select a router and run a fix ──</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedId = null;
+
+function selectRouter() {
+  const sel = document.getElementById('router-select');
+  selectedId = sel.value || null;
+  const name = sel.options[sel.selectedIndex]?.dataset.name || '';
+  document.getElementById('selected-router').style.display = selectedId ? '' : 'none';
+  document.getElementById('selected-name').textContent = name;
+}
+
+function runFix(fixKey) {
+  if (!selectedId) {
+    alert('Select a router first.');
+    return;
+  }
+  const log = document.getElementById('fix-output');
+  const name = document.getElementById('selected-name').textContent;
+  log.textContent = `Running: ${fixKey} on ${name}…\n`;
+
+  fetch(`/api/fix/${selectedId}/${fixKey}`, { method: 'POST' })
+    .then(r => r.json())
+    .then(d => {
+      log.textContent = d.output || d.error || '(no output)';
+    })
+    .catch(e => {
+      log.textContent = `Error: ${e}`;
+    });
+}
+
+function clearLog() {
+  document.getElementById('fix-output').innerHTML =
+    '<span style="color:#6b7280">── cleared ──</span>';
+}
+</script>
+{% endblock %}
